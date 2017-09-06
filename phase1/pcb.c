@@ -22,8 +22,8 @@ extern pcb_t* allocPcb ()
     tmp->p_prnt = NULL;
     tmp->p_child = NULL;
     tmp->p_sib = NULL;
-    tmp->p_s = NULL; // REPLACE THIS LATER ONCE We KNOW WHAT A STATE_T IS
-    TMP->p_semAdd = NULL;
+    tmp->p_s = NULL; // REPLACE THIS LATER ONCE WE KNOW WHAT IT'S USED FOR
+    TMP->p_semAdd = NULL; // REPLACE THIS LATER ONCE WE KNOW WHAT IT'S USED FOR
     return tmp;
 }
 
@@ -35,7 +35,8 @@ extern void initPcbs ()
     static pcb_t[MAXPROC] pcbList;
     static pcb_t* freeList = &pcbList;
     // enque each pcb onto the free list
-    for(int i = 0; i < MAXPROC; i++){
+    for(int i = 0; i < MAXPROC; i++)
+    {
         freePcb(&pcbList + (i*sizeof(pcb_t)))
     }
 }
@@ -72,7 +73,8 @@ extern void insertProcQ (pcb_t** tp, pcb_t* p)
     return;
 }
 
-// removes the top node from the pcb queue
+// Removes the top node from the pcb queue
+// and returns it
 extern pcb_t* removeProcQ (pcb_t** tp)
 {
     // case 0
@@ -100,7 +102,21 @@ extern pcb_t* removeProcQ (pcb_t** tp)
 // returns p or null p isn't in the list
 extern pcb_t* outProcQ (pcb_t** tp, pcb_t* p)
 {
-    
+    // case 0
+    if (*tp == NULL) return NULL;
+    // case 1+
+    pcb_t* working = *tp;
+    // look at entire *tp since we can't assume that p is in *tp
+    while (working != p)
+    {
+        working = working->p_next;
+        if (working == *tp) return NULL; // not in list
+    }
+    working->p_next->p_prev = working->p_prev;
+    working->p_prev->p_next = working->p_next;
+    working->p_next = NULL;
+    working->p_prev = NULL;
+    return working;
 }
 
 // returns a pointer to the top of the pcb queue
@@ -111,15 +127,16 @@ extern pcb_t* headProcQ (pcb_t** tp)
     return *tp->p_next;
 }
 
-//
+// returns TRUE if p has children
+// returns NULL if p is a null pointer
 extern int emptyChild (pcb_t* p)
 {
     if (p==NULL) return NULL;
     return !(p->p_child);
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////LEFT OFF HERE////////////////////////////////////////
+// Makes a pcb p into a child of pcb prnt
+// AS THE LAST CHILD IN THE LINKED LIST
 extern void insertChild (pcb_t* prnt, pcb_t* p)
 {
     p->p_prnt = prnt;
@@ -132,23 +149,49 @@ extern void insertChild (pcb_t* prnt, pcb_t* p)
 }
 
 // recursivly walk down siblings tree
-extern void insertSibling (pcb_t* brother, pcb_t* baby)
+extern void insertSibling (pcb_t* sister, pcb_t* baby)
 {
-    if (brother->p_sib == NULL)
+    if (sister->p_sib == NULL)
     {
-        brother->p_sib = baby;
+        sister->p_sib = baby;
         return;
     }
-    insertSibling(brother->p_sib, baby);
+    insertSibling(sister->p_sib, baby);
     return;
 }
 
+// Removes the first child of pcb p if it exists
+// and returns that child or null
 extern pcb_t* removeChild (pcb_t* p)
 {
-    
+    if (p->p_child == NULL) return NULL;
+    pcb_t* child = p->p_child
+    p->p_child = child->p_sib;
+    child->p_prnt = NULL
+    return child;
+
 }
 
+// Disown a child p from it's parents and siblings
 extern pcb_t* outChild (pcb_t* p)
 {
-    
+    // case 0 children
+    if (p->p_prnt == NULL) return NULL;
+    pcb_t* sister = p->p_prnt->p_child;
+    // case 1 children
+    if (sister == p)
+    {
+        p->p_prnt->p_child = NULL;
+        p->p_prnt = NULL;
+        return p
+    }
+    //case 2+ children
+    while(sister->p_sib != p) // walk down the family
+    {
+        sister = sister->p_sib;
+    }
+    p->p_prnt = NULL;
+    sister->p_sib = p->p_sib;
+    p->p_sib = NULL;
+    return p;
 }

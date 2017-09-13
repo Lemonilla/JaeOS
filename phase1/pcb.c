@@ -6,7 +6,7 @@
 HIDDEN pcb_t* freeList;
 
 // Insert into the free list
-extern void freePcb (pcb_t* p)
+void freePcb (pcb_t* p)
 {
     insertProcQ(&freeList, p);
 }
@@ -17,7 +17,7 @@ extern void freePcb (pcb_t* p)
 // pointer to the removed element. ProcBlk’s get reused, so it is
 // important that no previous values persist in a ProcBlk when it
 // gets reallocated.
-extern pcb_t* allocPcb ()
+pcb_t* allocPcb ()
 {
     if (emptyProcQ(freeList)) return NULL;
     pcb_t* tmp = removeProcQ(&freeList);
@@ -34,7 +34,7 @@ extern pcb_t* allocPcb ()
 // Initialize the pcbFree list to contain all the elements of
 // the static array of MAXPROC ProcBlk’s. This method will be called
 // only once during data structure initialization.
-extern void initPcbs ()
+void initPcbs ()
 {
     static pcb_t pcbList[MAXPROC];
     freeList = (pcb_t*) &pcbList;
@@ -46,19 +46,19 @@ extern void initPcbs ()
 }
 
 // creates an empty queue
-extern pcb_t* mkEmptyProcQ ()
+pcb_t* mkEmptyProcQ ()
 {
     return NULL;
 }
 
 // returns TRUE if the queue is empty
-extern int emptyProcQ (pcb_t* tp)
+int emptyProcQ (pcb_t* tp)
 {
     return (tp==mkEmptyProcQ());
 }
 
 // Inserts a pcb node into a pcb queue
-extern void insertProcQ (pcb_t** tp, pcb_t* p)
+void insertProcQ (pcb_t** tp, pcb_t* p)
 {
     // case 0
     if (emptyProcQ(*tp))
@@ -79,7 +79,7 @@ extern void insertProcQ (pcb_t** tp, pcb_t* p)
 
 // Removes the top node from the pcb queue
 // and returns it
-extern pcb_t* removeProcQ (pcb_t** tp)
+pcb_t* removeProcQ (pcb_t** tp)
 {
     // case 0
     if (emptyProcQ(*tp))
@@ -103,7 +103,7 @@ extern pcb_t* removeProcQ (pcb_t** tp)
 
 // removes a given node from the pcb queue
 // returns p or null p isn't in the list
-extern pcb_t* outProcQ (pcb_t** tp, pcb_t* p)
+pcb_t* outProcQ (pcb_t** tp, pcb_t* p)
 {
     // case 0
     if ((*tp) == NULL) return NULL;
@@ -124,7 +124,7 @@ extern pcb_t* outProcQ (pcb_t** tp, pcb_t* p)
 
 // returns a pointer to the top of the pcb queue
 // or null if the list is empty
-extern pcb_t* headProcQ (pcb_t** tp)
+pcb_t* headProcQ (pcb_t** tp)
 {
     if (emptyProcQ(*tp)) return NULL;
     return (*tp)->p_next;
@@ -132,7 +132,7 @@ extern pcb_t* headProcQ (pcb_t** tp)
 
 // returns TRUE if p has children
 // returns NULL if p is a null pointer
-extern int emptyChild (pcb_t* p)
+int emptyChild (pcb_t* p)
 {
     if (p==NULL) return 0;
     return !(p->p_child);
@@ -140,7 +140,7 @@ extern int emptyChild (pcb_t* p)
 
 // Makes a pcb p into a child of pcb prnt
 // AS THE LAST CHILD IN THE LINKED LIST
-extern void insertChild (pcb_t* prnt, pcb_t* p)
+void insertChild (pcb_t* prnt, pcb_t* p)
 {
     p->p_prnt = prnt;
     if (emptyChild(prnt)) {
@@ -152,7 +152,7 @@ extern void insertChild (pcb_t* prnt, pcb_t* p)
 }
 
 // recursivly walk down siblings tree
-extern void insertSibling (pcb_t* sister, pcb_t* baby)
+void insertSibling (pcb_t* sister, pcb_t* baby)
 {
     if (sister->p_sib == NULL)
     {
@@ -165,7 +165,7 @@ extern void insertSibling (pcb_t* sister, pcb_t* baby)
 
 // Removes the first child of pcb p if it exists
 // and returns that child or null
-extern pcb_t* removeChild (pcb_t* p)
+pcb_t* removeChild (pcb_t* p)
 {
     if (p->p_child == NULL) return NULL;
     pcb_t* child = p->p_child;
@@ -176,7 +176,7 @@ extern pcb_t* removeChild (pcb_t* p)
 }
 
 // Disown a child p from it's parents and siblings
-extern pcb_t* outChild (pcb_t* p)
+pcb_t* outChild (pcb_t* p)
 {
     // case 0 children
     if (p->p_prnt == NULL) return NULL;

@@ -13,10 +13,12 @@ HIDDEN semd_t* getFreeASL(int* semAdd)
     semd_t* ret = freeList;
     freeList = freeList->s_next;
     ret->s_next = NULL;
+    ret->s_tp = mkEmptyProcQ();
+    ret->s_semAdd = semAdd;
     return ret; 
 }
 
-semd_t* find(int* semAdd)
+HIDDEN semd_t* find(int* semAdd)
 {
     semd_t* a = asl;
     semd_t* b = asl->s_next;
@@ -27,6 +29,12 @@ semd_t* find(int* semAdd)
     }
     // b's semAdd is eol
     return a;
+}
+
+HIDDEN void freeASL(semd_t* toFree)
+{
+    toFree->s_next = freeList;
+    freeList = toFree;
 }
 
 // insert p into semd_t list where s_semAdd = semAdd
@@ -52,7 +60,13 @@ pcb_t* removeBlocked (int *semAdd)
     semd_t* prev = find(semAdd);
     if (prev->s_next->s_semAdd == semAdd)
     {
-        return removeProcQ(prev->s_next->s_tp);
+        pcb_t* ret = removeProcQ(prev->s_next->s_tp);
+        if (emtpyProcQ(prev->s_next->s_tp))
+        {
+            prev->s_next = prev->s_next->s_next;
+            freeASL(prev->s_next);
+        }
+        return ret;
     }
     return NULL;
 }
@@ -63,7 +77,13 @@ pcb_t* outBlocked (pcb_t *pcb)
     semd_t* prev = find(pcb->p_semAdd);
     if (prev->s_next->s_semAdd == pcb->p_semAdd)
     {
-        return outProcQ(prev->s_next->s_tp, pcb);
+        pcb_t* ret = outProcQ(prev->s_next->s_tp, pcb);
+        if (emtpyProcQ(prev->s_next->s_tp))
+        {
+            prev->s_next = prev->s_next->s_next;
+            freeASL(prev->s_next);
+        }
+        return ret;
     }
     return NULL;
 }
@@ -88,9 +108,17 @@ void initASL()
 {
     static semd_t aslList[MAXPROC+2];
     freeList = &aslList;
+
     // enque each asl onto the free list
-    for(int i = 0; i < MAXPROC; i++)
+    for(int i = 0; i < MAXPROC-1; i++)
     {
-        
+        aslList[i].s_next = &aslList[i+1];
     }
+    aslList[MAXPROC-1].s_next = NULL;
+
+    // init asl
+    asl = &freeList[MAXPROC];
+    asl->s_next = &freeList[MAXPROC+1];
+    asl->s_semAdd = 0;
+    asl->s_next->s_semAdd = MAXINT;
 }

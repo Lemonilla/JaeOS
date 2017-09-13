@@ -13,14 +13,13 @@
 
 
 #define MAXPROC                 20
-
+#define MAXINT                  (int)0xFFFFFFFF
 
 
 
 /// Coding Standards
 #define TRUE                    1
 #define FALSE                   0
-#define bool                    int
 
 
 

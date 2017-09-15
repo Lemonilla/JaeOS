@@ -269,7 +269,7 @@ void main() {
 
 
 
-debugT(0xFF,0xFF,0xFF,0xFF);
+
 
         /* check ASL */
         initASL();
@@ -313,12 +313,21 @@ debugT(0xFF,0xFF,0xFF,0xFF);
                 adderrbuf("removeBlocked: removed nonexistent blocked proc   ");
         addokbuf("insertBlocked and removeBlocked ok   \n");
 
+
+
+
+
         if (headBlocked(&sem[11]) != NULL)
                 adderrbuf("headBlocked: nonNULL for a nonexistent queue   ");
         if ((q = headBlocked(&sem[9])) == NULL)
                 adderrbuf("headBlocked(1): NULL for an existent queue   ");
         if (q != procp[9])
                 adderrbuf("headBlocked(1): wrong process returned   ");
+
+
+debugT(0xFF,0xFF,0xFF,0xFF);
+
+            
         p = outBlocked(q);
         if (p != q)
                 adderrbuf("outBlocked(1): couldn't remove from valid queue   ");

@@ -89,7 +89,6 @@ void insertProcQ (pcb_t** tp, pcb_t* p)
 // and returns it
 pcb_t* removeProcQ (pcb_t** tp)
 {
-    debug(*tp,0,0,0);
     // case 0
     if (emptyProcQ(*tp))
     {
@@ -102,7 +101,17 @@ pcb_t* removeProcQ (pcb_t** tp)
         (*tp) = NULL;
         return ret;
     }
-    // case 2+
+    // case 2
+    if ((*tp)->p_next->p_next == (*tp))
+    {
+        (*tp)->p_next = (*tp);
+        (*tp)->p_prev = (*tp);
+        ret->p_next = NULL;
+        ret->p_prev = NULL;
+        return ret;
+    }
+
+    // case 3+
     (*tp)->p_next->p_next->p_prev = (*tp);
     (*tp)->p_next = (*tp)->p_next->p_next;
     ret->p_next = NULL;
@@ -136,7 +145,7 @@ pcb_t* outProcQ (pcb_t** tp, pcb_t* p)
 pcb_t* headProcQ (pcb_t* tp)
 {
     if (emptyProcQ(tp)) return NULL;
-    return ((tp)->p_next);
+    return (tp->p_next);
 }
 
 // returns TRUE if p has children

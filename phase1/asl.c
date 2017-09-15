@@ -33,10 +33,13 @@ HIDDEN semd_t* getFreeASL(int* semAdd)
 
 HIDDEN semd_t* find(int* semAdd)
 {
+
     semd_t* a = asl;
     semd_t* b = asl->s_next;
     while (b->s_semAdd != NULL && b->s_semAdd < semAdd)
     {
+        if (b->s_semAdd == MAXINT) break;
+        debug(0xf0,(int)b->s_semAdd,1,1);
         a = b;
         b = b->s_next;
     }
@@ -78,14 +81,15 @@ pcb_t* removeBlocked (int *semAdd)
     semd_t* prev = find(semAdd);
     if (prev->s_next->s_semAdd == semAdd)
     {
-        debuga(0xFF,prev->s_next->s_tp,0,0);
-        pcb_t* ret = removeProcQ((prev->s_next->s_tp));
-        debuga(0xFF,prev->s_next->s_tp,0,0);
+        pcb_t* ret = removeProcQ(&(prev->s_next->s_tp));
+
         if (emptyProcQ(prev->s_next->s_tp))
         {
+            semd_t* tmp = prev->s_next;
             prev->s_next = prev->s_next->s_next;
-            freeASL(prev->s_next);
+            freeASL(tmp);
         }
+        
         return ret;
     }
     debug(0xBF,0,0,0);
@@ -99,14 +103,18 @@ pcb_t* outBlocked (pcb_t *pcb)
     //debuga(0x20,(int)prev->s_next->s_semAdd,pcb->debug,0);
     if (prev->s_next->s_semAdd == pcb->p_semAdd)
     {
-        pcb_t* ret = outProcQ(prev->s_next->s_tp, pcb);
+        pcb_t* ret = outProcQ(&(prev->s_next->s_tp),pcb);
+
         if (emptyProcQ(prev->s_next->s_tp))
         {
+            semd_t* tmp = prev->s_next;
             prev->s_next = prev->s_next->s_next;
-            freeASL(prev->s_next);
+            freeASL(tmp);
         }
+        
         return ret;
     }
+    debug(0xBF,0,0,0);
     return NULL;
 }
 
@@ -116,7 +124,7 @@ pcb_t* headBlocked (int *semAdd)
     semd_t* prev = find(semAdd);
     if (prev->s_next->s_semAdd == semAdd)
     {
-        return headProcQ(prev->s_next->s_tp);
+        return headProcQ(&(prev->s_next->s_tp));
     }
     return NULL;
 }

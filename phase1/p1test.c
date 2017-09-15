@@ -309,8 +309,6 @@ debugT(0xFF,0xFF,0xFF,0xFF);
                         adderrbuf("insertBlocked(3): unexpected TRUE   ");
         }
 
-
-
         if (removeBlocked(&sem[11]) != NULL)
                 adderrbuf("removeBlocked: removed nonexistent blocked proc   ");
         addokbuf("insertBlocked and removeBlocked ok   \n");

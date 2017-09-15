@@ -7,11 +7,17 @@ HIDDEN semd_t* freeList;
 HIDDEN semd_t* asl;
 
 
+
+
+
+
+
 void debug (int a, int b, int c, int d)
 {
     int i=0;
     i++;
 }
+
 
 
 HIDDEN semd_t* getFreeASL(int* semAdd)
@@ -41,15 +47,16 @@ HIDDEN semd_t* find(int* semAdd)
 HIDDEN void freeASL(semd_t* toFree)
 {
     toFree->s_next = freeList;
+    toFree->s_semAdd = NULL;
+    toFree->s_tp = NULL;
     freeList = toFree;
-
 }
 
 // insert p into semd_t list where s_semAdd = semAdd
 // returns TRUE if the pcb can't be added
 int insertBlocked (int *semAdd, pcb_t *p)
 {
-    debuga(0x10,(int)semAdd,p->debug,0);
+    //debuga(0x10,(int)semAdd,p->debug,0);
     semd_t* prev = find(semAdd);
     if (prev->s_next->s_semAdd == semAdd)
     {
@@ -67,12 +74,12 @@ int insertBlocked (int *semAdd, pcb_t *p)
 // remove the top pcb_t from semd_t where s_semAdd == semAdd
 pcb_t* removeBlocked (int *semAdd)
 {
-    debuga(0x20,(int)semAdd,0,0);
+    //debuga(0x20,(int)semAdd,0,0);
     semd_t* prev = find(semAdd);
     if (prev->s_next->s_semAdd == semAdd)
     {
         debuga(0xFF,prev->s_next->s_tp,0,0);
-        pcb_t* ret = removeProcQ(prev->s_next->s_tp);
+        pcb_t* ret = removeProcQ((prev->s_next->s_tp));
         debuga(0xFF,prev->s_next->s_tp,0,0);
         if (emptyProcQ(prev->s_next->s_tp))
         {
@@ -89,7 +96,7 @@ pcb_t* removeBlocked (int *semAdd)
 pcb_t* outBlocked (pcb_t *pcb)
 {
     semd_t* prev = find(pcb->p_semAdd);
-    debuga(0x20,(int)prev->s_next->s_semAdd,pcb->debug,0);
+    //debuga(0x20,(int)prev->s_next->s_semAdd,pcb->debug,0);
     if (prev->s_next->s_semAdd == pcb->p_semAdd)
     {
         pcb_t* ret = outProcQ(prev->s_next->s_tp, pcb);

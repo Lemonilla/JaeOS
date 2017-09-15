@@ -89,7 +89,7 @@ void insertProcQ (pcb_t** tp, pcb_t* p)
 // and returns it
 pcb_t* removeProcQ (pcb_t** tp)
 {
-
+    debug(*tp,0,0,0);
     // case 0
     if (emptyProcQ(*tp))
     {

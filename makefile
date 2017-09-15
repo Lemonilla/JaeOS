@@ -3,12 +3,12 @@
 #Written by Mikey Goldweber and updated by Jake Wagner
 #Last Updated: 5-07-17#
 
-SUPDIR = /usr/include/uarm/
+SUPDIR = /usr/include/uarm
 
 DEFS = h/const.h h/types.h e/asl.e e/pcb.e $(SUPDIR)/libuarm.h Make$
 
 CFLAGS =  -mcpu=arm7tdmi -c
-LDCOREFLAGS =  -T $(SUPDIR)/ldscripts/elf32ltsarm.h.uarmcore.x
+LDCOREFLAGS =  -T /usr/include/uarm/ldscripts/elf32ltsarm.h.uarmcore.x
 
 CC = arm-none-eabi-gcc
 LD = arm-none-eabi-ld
@@ -17,7 +17,7 @@ LD = arm-none-eabi-ld
 all: kernel.core.uarm
 
 kernel.core.uarm: p1test.o asl.o pcb.o
-	$(LD) $(LDCOREFLAGS) -o kernel.core.uarm p1test.o asl.o pcb.o $(SUPDIR)$
+	$(LD) $(LDCOREFLAGS) -o kernel.core.uarm p1test.o asl.o pcb.o $(SUPDIR)/libuarm.o
 
 p1test.o: phase1/p1test.c $(DEFS)
 	$(CC) $(CFLAGS) phase1/p1test.c
@@ -30,6 +30,8 @@ pcb.o: phase1/pcb.c $(DEFS)
 
 
 clean:
+	rm -f *.o *.uarm kernel
+clear:
 	rm -f *.o *.uarm kernel
 
 

@@ -4,6 +4,13 @@
 
 
 HIDDEN pcb_t* freeList;
+HIDDEN pcb_t* tp;
+
+void debuga(int a, int b, int c, int d)
+{
+    int i=42;
+    i++;
+}
 
 // Insert into the free list
 void freePcb (pcb_t* p)
@@ -41,7 +48,8 @@ void initPcbs ()
     // enque each pcb onto the free list
     for(int i = 0; i < MAXPROC; i++)
     {
-        freePcb((pcb_t*)(&pcbList + (i*sizeof(pcb_t))));
+        pcbList[i].debug = i;
+        freePcb((pcb_t*)&pcbList[i]);
     }
 }
 
@@ -81,6 +89,7 @@ void insertProcQ (pcb_t** tp, pcb_t* p)
 // and returns it
 pcb_t* removeProcQ (pcb_t** tp)
 {
+
     // case 0
     if (emptyProcQ(*tp))
     {
@@ -124,10 +133,10 @@ pcb_t* outProcQ (pcb_t** tp, pcb_t* p)
 
 // returns a pointer to the top of the pcb queue
 // or null if the list is empty
-pcb_t* headProcQ (pcb_t** tp)
+pcb_t* headProcQ (pcb_t* tp)
 {
-    if (emptyProcQ(*tp)) return NULL;
-    return (*tp)->p_next;
+    if (emptyProcQ(tp)) return NULL;
+    return ((tp)->p_next);
 }
 
 // returns TRUE if p has children
@@ -172,29 +181,29 @@ pcb_t* removeChild (pcb_t* p)
     p->p_child = child->p_sib;
     child->p_prnt = NULL;
     return child;
-
 }
 
 // Disown a child p from it's parents and siblings
 pcb_t* outChild (pcb_t* p)
 {
-    // case 0 children
+    // case no parents
     if (p->p_prnt == NULL) return NULL;
-    pcb_t* sister = p->p_prnt->p_child;
-    // case 1 children
-    if (sister == p)
+
+    // case p is direct child of parent
+    if (p->p_prnt->p_child == p)
     {
-        p->p_prnt->p_child = NULL;
+        p->p_prnt->p_child = p->p_sib;
         p->p_prnt = NULL;
         return p;
     }
-    //case 2+ children
-    while(sister->p_sib != p) // walk down the family
+    // case p is not direct child
+    pcb_t* tmp = p->p_prnt->p_child;
+    while (tmp->p_sib != p)
     {
-        sister = sister->p_sib;
+        tmp = tmp->p_sib;
     }
+    tmp->p_sib = p->p_sib;
     p->p_prnt = NULL;
-    sister->p_sib = p->p_sib;
     p->p_sib = NULL;
     return p;
 }

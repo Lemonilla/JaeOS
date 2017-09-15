@@ -47,6 +47,13 @@ char *mp = okbuf;
 
 typedef unsigned int devreg;
 
+
+void debugT(int a, int b, int c, int d)
+{
+    int i = 42;
+    i++;
+}
+
 /* This function returns the terminal transmitter status value given its address */
 devreg termstat(memaddr * stataddr) {
         return((*stataddr) & STATUSMASK);
@@ -67,7 +74,7 @@ unsigned int termprint(char * str, unsigned int term) {
                 statusp = (devreg *) (TERM0ADDR + (term * DEV_REG_SIZE) + (TRANSTATUS * DEV_REG_SIZE_W));
                 commandp = (devreg *) (TERM0ADDR + (term * DEV_REG_SIZE) + (TRANCOMMAND * DEV_REG_SIZE_W));
 
-                /* test device status */
+                /* test devicfe status */
                 stat = termstat(statusp);
                 if (stat == DEV_S_READY || stat == TRANSMITTED) {
                         /* device is available */
@@ -127,7 +134,9 @@ void adderrbuf(char *strp) {
         PANIC();
 }
 
-
+void __start(){
+    main();
+}
 
 void main() {
         int i;
@@ -160,14 +169,18 @@ void main() {
                 switch (i) {
                 case 0:
                         firstproc = q;
+                      //  debugT((int)0x15,0,0,q->debug);
                         break;
                 case 5:
                         midproc = q;
+                      //  debugT((int)0x16,0,0,q->debug);
                         break;
                 case 9:
                         lastproc = q;
+                      //  debugT((int)0x17,0,0,q->debug);
                         break;
                 default:
+                      // debugT((int)0x10,0,0,q->debug);
                         break;
                 }
                 insertProcQ(&qa, q);
@@ -241,6 +254,7 @@ void main() {
                 if ((q = removeChild(procp[0])) == NULL)
                         adderrbuf("removeChild: unexpected NULL   ");
         }
+
         if (removeChild(procp[0]) != NULL)
           adderrbuf("removeChild: removes too many children   ");
 
@@ -254,8 +268,12 @@ void main() {
                 freePcb(procp[i]);
 
 
+
+debugT(0xFF,0xFF,0xFF,0xFF);
+
         /* check ASL */
         initASL();
+        addokbuf("\n");
         addokbuf("Initialized active semaphore list   \n");
 
         /* check removeBlocked and insertBlocked */
@@ -290,6 +308,9 @@ void main() {
                 if (insertBlocked(&sem[i-10], q))
                         adderrbuf("insertBlocked(3): unexpected TRUE   ");
         }
+
+
+
         if (removeBlocked(&sem[11]) != NULL)
                 adderrbuf("removeBlocked: removed nonexistent blocked proc   ");
         addokbuf("insertBlocked and removeBlocked ok   \n");

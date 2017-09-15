@@ -7,6 +7,13 @@ HIDDEN semd_t* freeList;
 HIDDEN semd_t* asl;
 
 
+void debug (int a, int b, int c, int d)
+{
+    int i=0;
+    i++;
+}
+
+
 HIDDEN semd_t* getFreeASL(int* semAdd)
 {
     if (freeList == NULL) return NULL;
@@ -35,39 +42,46 @@ HIDDEN void freeASL(semd_t* toFree)
 {
     toFree->s_next = freeList;
     freeList = toFree;
+
 }
 
 // insert p into semd_t list where s_semAdd = semAdd
+// returns TRUE if the pcb can't be added
 int insertBlocked (int *semAdd, pcb_t *p)
 {
+    debuga(0x10,(int)semAdd,p->debug,0);
     semd_t* prev = find(semAdd);
     if (prev->s_next->s_semAdd == semAdd)
     {
         insertProcQ(prev->s_next->s_tp,p);
-        return TRUE;
+        return FALSE;
     }
     semd_t* newSem = getFreeASL(semAdd);
-    if (newSem == NULL) return FALSE;
+    if (newSem == NULL) return TRUE;
     newSem->s_next = prev->s_next;
     prev->s_next = newSem;
-    insertProcQ(newSem->s_tp,p);
-    return TRUE;
+    insertProcQ(&newSem->s_tp,p);
+    return FALSE;
 }
 
 // remove the top pcb_t from semd_t where s_semAdd == semAdd
 pcb_t* removeBlocked (int *semAdd)
 {
+    debuga(0x20,(int)semAdd,0,0);
     semd_t* prev = find(semAdd);
     if (prev->s_next->s_semAdd == semAdd)
     {
+        debuga(0xFF,prev->s_next->s_tp,0,0);
         pcb_t* ret = removeProcQ(prev->s_next->s_tp);
-        if (emtpyProcQ(prev->s_next->s_tp))
+        debuga(0xFF,prev->s_next->s_tp,0,0);
+        if (emptyProcQ(prev->s_next->s_tp))
         {
             prev->s_next = prev->s_next->s_next;
             freeASL(prev->s_next);
         }
         return ret;
     }
+    debug(0xBF,0,0,0);
     return NULL;
 }
 
@@ -75,10 +89,11 @@ pcb_t* removeBlocked (int *semAdd)
 pcb_t* outBlocked (pcb_t *pcb)
 {
     semd_t* prev = find(pcb->p_semAdd);
+    debuga(0x20,(int)prev->s_next->s_semAdd,pcb->debug,0);
     if (prev->s_next->s_semAdd == pcb->p_semAdd)
     {
         pcb_t* ret = outProcQ(prev->s_next->s_tp, pcb);
-        if (emtpyProcQ(prev->s_next->s_tp))
+        if (emptyProcQ(prev->s_next->s_tp))
         {
             prev->s_next = prev->s_next->s_next;
             freeASL(prev->s_next);

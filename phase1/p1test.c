@@ -48,11 +48,6 @@ char *mp = okbuf;
 typedef unsigned int devreg;
 
 
-void debugT(int a, int b, int c, int d)
-{
-    int i = 42;
-    i++;
-}
 
 /* This function returns the terminal transmitter status value given its address */
 devreg termstat(memaddr * stataddr) {
@@ -169,18 +164,14 @@ void main() {
                 switch (i) {
                 case 0:
                         firstproc = q;
-                      //  debugT((int)0x15,0,0,q->debug);
                         break;
                 case 5:
                         midproc = q;
-                      //  debugT((int)0x16,0,0,q->debug);
                         break;
                 case 9:
                         lastproc = q;
-                      //  debugT((int)0x17,0,0,q->debug);
                         break;
                 default:
-                      // debugT((int)0x10,0,0,q->debug);
                         break;
                 }
                 insertProcQ(&qa, q);
@@ -280,9 +271,12 @@ void main() {
         addokbuf("insertBlocked test #1 started  \n");
         for (i = 10; i < MAXPROC; i++) {
                 procp[i] = allocPcb();
+
                 if (insertBlocked(&sem[i], procp[i]))
                         adderrbuf("insertBlocked(1): unexpected TRUE   ");
         }
+    
+
         addokbuf("insertBlocked test #2 started  \n");
         for (i = 0; i < 10; i++) {
                 procp[i] = allocPcb();
@@ -308,26 +302,17 @@ void main() {
                 if (insertBlocked(&sem[i-10], q))
                         adderrbuf("insertBlocked(3): unexpected TRUE   ");
         }
-
         if (removeBlocked(&sem[11]) != NULL)
                 adderrbuf("removeBlocked: removed nonexistent blocked proc   ");
         addokbuf("insertBlocked and removeBlocked ok   \n");
-
-
-
-
-
         if (headBlocked(&sem[11]) != NULL)
                 adderrbuf("headBlocked: nonNULL for a nonexistent queue   ");
+
         if ((q = headBlocked(&sem[9])) == NULL)
                 adderrbuf("headBlocked(1): NULL for an existent queue   ");
+        
         if (q != procp[9])
                 adderrbuf("headBlocked(1): wrong process returned   ");
-
-
-debugT(0xFF,0xFF,0xFF,0xFF);
-
-            
         p = outBlocked(q);
         if (p != q)
                 adderrbuf("outBlocked(1): couldn't remove from valid queue   ");

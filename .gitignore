@@ -1,6 +1,7 @@
 make
-
-
+*.zip
+*.core.uarm
+*.uarm
 
 # Object files
 *.o

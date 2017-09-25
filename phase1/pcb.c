@@ -4,13 +4,7 @@
 
 
 HIDDEN pcb_t* freeList;
-HIDDEN pcb_t* tp;
 
-void debuga(int a, int b, int c, int d)
-{
-    int i=42;
-    i++;
-}
 
 // Insert into the free list
 void freePcb (pcb_t* p)
@@ -34,7 +28,7 @@ pcb_t* allocPcb ()
     tmp->p_child = NULL;
     tmp->p_sib = NULL;
    // tmp->p_s = NULL; // REPLACE THIS LATER ONCE WE KNOW WHAT IT'S USED FOR
-   // tmp->p_semAdd = NULL; // REPLACE THIS LATER ONCE WE KNOW WHAT IT'S USED FOR
+    tmp->p_semAdd = NULL;
     return tmp;
 }
 
@@ -47,10 +41,8 @@ void initPcbs ()
     freeList = (pcb_t*) &pcbList;
     // enque each pcb onto the free list
     for(int i = 0; i < MAXPROC; i++)
-    {
-        pcbList[i].debug = i;
         freePcb((pcb_t*)&pcbList[i]);
-    }
+    
 }
 
 // creates an empty queue
@@ -62,7 +54,7 @@ pcb_t* mkEmptyProcQ ()
 // returns TRUE if the queue is empty
 int emptyProcQ (pcb_t* tp)
 {
-    return (tp==mkEmptyProcQ());
+    return (tp==NULL);
 }
 
 // Inserts a pcb node into a pcb queue
@@ -78,9 +70,9 @@ void insertProcQ (pcb_t** tp, pcb_t* p)
     }
     // case 1+
     p->p_next = (*tp)->p_next;
-    (*tp)->p_next = p;
     p->p_prev = (*tp);
-    p->p_next->p_prev = p;
+    (*tp)->p_next->p_prev = p;
+    (*tp)->p_next = p;
     (*tp) = p;
     return;
 }
@@ -101,17 +93,7 @@ pcb_t* removeProcQ (pcb_t** tp)
         (*tp) = NULL;
         return ret;
     }
-    // case 2
-    if ((*tp)->p_next->p_next == (*tp))
-    {
-        (*tp)->p_next = (*tp);
-        (*tp)->p_prev = (*tp);
-        ret->p_next = NULL;
-        ret->p_prev = NULL;
-        return ret;
-    }
-
-    // case 3+
+    // case 2+
     (*tp)->p_next->p_next->p_prev = (*tp);
     (*tp)->p_next = (*tp)->p_next->p_next;
     ret->p_next = NULL;
@@ -132,6 +114,15 @@ pcb_t* outProcQ (pcb_t** tp, pcb_t* p)
     {
         working = working->p_next;
         if (working == (*tp)) return NULL; // not in list
+    }
+    if (*tp == p)
+    {
+        // case 2+
+        *tp = p->p_next;
+        if (*tp == p) // case 1
+        {
+            *tp = NULL;
+        }
     }
     working->p_next->p_prev = working->p_prev;
     working->p_prev->p_next = working->p_next;
@@ -156,18 +147,6 @@ int emptyChild (pcb_t* p)
     return !(p->p_child);
 }
 
-// Makes a pcb p into a child of pcb prnt
-// AS THE LAST CHILD IN THE LINKED LIST
-void insertChild (pcb_t* prnt, pcb_t* p)
-{
-    p->p_prnt = prnt;
-    if (emptyChild(prnt)) {
-        prnt->p_child = p;
-        return;
-    }
-    insertSibling(prnt->p_child, p);
-    return;
-}
 
 // recursivly walk down siblings tree
 void insertSibling (pcb_t* sister, pcb_t* baby)
@@ -178,6 +157,19 @@ void insertSibling (pcb_t* sister, pcb_t* baby)
         return;
     }
     insertSibling(sister->p_sib, baby);
+    return;
+}
+
+// Makes a pcb p into a child of pcb prnt
+// AS THE LAST CHILD IN THE LINKED LIST
+void insertChild (pcb_t* prnt, pcb_t* p)
+{
+    p->p_prnt = prnt;
+    if (emptyChild(prnt)) {
+        prnt->p_child = p;
+        return;
+    }
+    insertSibling(prnt->p_child, p);
     return;
 }
 

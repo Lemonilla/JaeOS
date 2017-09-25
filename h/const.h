@@ -14,6 +14,7 @@
 
 #define MAXPROC                 20
 #define MAXINT                  0xFFFFFFFF
+#define HIDDEN                  static
 
 
 

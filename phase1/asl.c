@@ -1,3 +1,30 @@
+// #include "../h/types.h"
+// #include "../h/const.h"
+// #include "../e/pcb.e"
+// #include "../e/asl.e"
+
+// int insertBlocked (int *semAdd, pcb_t *p)
+// {
+//     return NULL;
+// }
+// pcb_t* removeBlocked (int *semAdd)
+// {
+// return NULL;
+// }
+// pcb_t* outBlocked (pcb_t *p)
+// {
+// return NULL;
+// }
+// pcb_t* headBlocked (int *semAdd)
+// {
+// return NULL;
+// }
+// void initASL ()
+// {
+
+// }
+
+
 #include "../h/types.h"
 #include "../h/const.h"
 #include "../e/pcb.e"
@@ -5,19 +32,6 @@
 
 HIDDEN semd_t* freeList;
 HIDDEN semd_t* asl;
-
-
-
-
-
-
-
-void debug (int a, int b, int c, int d)
-{
-    int i=0;
-    i++;
-}
-
 
 
 HIDDEN semd_t* getFreeASL(int* semAdd)
@@ -39,7 +53,6 @@ HIDDEN semd_t* find(int* semAdd)
     while (b->s_semAdd != NULL && b->s_semAdd < semAdd)
     {
         if (b->s_semAdd == MAXINT) break;
-        debug(0xf0,(int)b->s_semAdd,1,1);
         a = b;
         b = b->s_next;
     }
@@ -59,25 +72,24 @@ HIDDEN void freeASL(semd_t* toFree)
 // returns TRUE if the pcb can't be added
 int insertBlocked (int *semAdd, pcb_t *p)
 {
-    //debuga(0x10,(int)semAdd,p->debug,0);
     semd_t* prev = find(semAdd);
-    if (prev->s_next->s_semAdd == semAdd)
+    semd_t* sem = prev->s_next;
+    if (sem->s_semAdd != semAdd)
     {
-        insertProcQ(prev->s_next->s_tp,p);
-        return FALSE;
+        sem = getFreeASL(semAdd);
+        if (sem == NULL) return TRUE;
+        sem->s_next = prev->s_next;
+        prev->s_next = sem;
+        sem->s_semAdd = semAdd;
     }
-    semd_t* newSem = getFreeASL(semAdd);
-    if (newSem == NULL) return TRUE;
-    newSem->s_next = prev->s_next;
-    prev->s_next = newSem;
-    insertProcQ(&newSem->s_tp,p);
+    p->p_semAdd = semAdd;
+    insertProcQ(&(sem->s_tp),p);
     return FALSE;
 }
 
 // remove the top pcb_t from semd_t where s_semAdd == semAdd
 pcb_t* removeBlocked (int *semAdd)
 {
-    //debuga(0x20,(int)semAdd,0,0);
     semd_t* prev = find(semAdd);
     if (prev->s_next->s_semAdd == semAdd)
     {
@@ -92,7 +104,6 @@ pcb_t* removeBlocked (int *semAdd)
         
         return ret;
     }
-    debug(0xBF,0,0,0);
     return NULL;
 }
 
@@ -100,7 +111,6 @@ pcb_t* removeBlocked (int *semAdd)
 pcb_t* outBlocked (pcb_t *pcb)
 {
     semd_t* prev = find(pcb->p_semAdd);
-    //debuga(0x20,(int)prev->s_next->s_semAdd,pcb->debug,0);
     if (prev->s_next->s_semAdd == pcb->p_semAdd)
     {
         pcb_t* ret = outProcQ(&(prev->s_next->s_tp),pcb);
@@ -111,10 +121,9 @@ pcb_t* outBlocked (pcb_t *pcb)
             prev->s_next = prev->s_next->s_next;
             freeASL(tmp);
         }
-        
+
         return ret;
     }
-    debug(0xBF,0,0,0);
     return NULL;
 }
 
@@ -124,10 +133,12 @@ pcb_t* headBlocked (int *semAdd)
     semd_t* prev = find(semAdd);
     if (prev->s_next->s_semAdd == semAdd)
     {
-        return headProcQ(&(prev->s_next->s_tp));
+        pcb_t* ret = headProcQ(prev->s_next->s_tp);
+        return ret;
     }
     return NULL;
 }
+
 
 int aslEmtpy (semd_t** head) 
 {
@@ -152,3 +163,4 @@ void initASL()
     asl->s_semAdd = 0;
     asl->s_next->s_semAdd = MAXINT;
 }
+

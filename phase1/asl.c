@@ -1,29 +1,12 @@
-// #include "../h/types.h"
-// #include "../h/const.h"
-// #include "../e/pcb.e"
-// #include "../e/asl.e"
-
-// int insertBlocked (int *semAdd, pcb_t *p)
-// {
-//     return NULL;
-// }
-// pcb_t* removeBlocked (int *semAdd)
-// {
-// return NULL;
-// }
-// pcb_t* outBlocked (pcb_t *p)
-// {
-// return NULL;
-// }
-// pcb_t* headBlocked (int *semAdd)
-// {
-// return NULL;
-// }
-// void initASL ()
-// {
-
-// }
-
+/************************************ASL.C************************************
+ * Written by Neal Troscinski and Timothy Wright
+ *
+ * This application manages a singularly linked and sorted list of Active 
+ * Semaphores. The list is assorted in ascending order and has two dummy 
+ * nodes. The first dummy node is at the head of the list and has a Semaphore 
+ * Address of 0. The second dummy node is at the tail and has a Semaphore 
+ * Address of MAXINT.
+******************************************************************************/
 
 #include "../h/types.h"
 #include "../h/const.h"
@@ -34,6 +17,19 @@ HIDDEN semd_t* freeList;
 HIDDEN semd_t* asl;
 
 
+/***************************** Private Fucntions *****************************/
+
+/**** getFreeASL (private)
+ * Gets a SEMD from the freelist.
+ *
+ * Parameters:
+ * - semAdd  The semaphore address
+ *           to initialize the SEMD to.
+ *
+ * End State:
+ * - Returns NULL if the freelist is empty,
+ *   otherwise returns a new SEMD.
+ ****/
 HIDDEN semd_t* getFreeASL(int* semAdd)
 {
     if (freeList == NULL) return NULL;
@@ -45,6 +41,25 @@ HIDDEN semd_t* getFreeASL(int* semAdd)
     return ret; 
 }
 
+
+/**** find (private)
+ * Finds and returns the SEMD before the
+ * SEMD with the specified semAdd, or
+ * where the semAdd should be in the
+ * sorted list.
+ *
+ * Parameters:
+ * - semAdd  The semaphore address
+ *           to find the previous of.
+ *
+ * End State:
+ * - Returns the SEMD before the SEMD with
+ *   the specified semAdd if it is in the 
+ *   list.
+ * - If the semAdd isn't in the list, it 
+ *   returns the SEMD before where the 
+ *   semAdd should appear.
+ ****/
 HIDDEN semd_t* find(int* semAdd)
 {
 
@@ -60,6 +75,18 @@ HIDDEN semd_t* find(int* semAdd)
     return a;
 }
 
+
+/**** freeASL (private)
+ * Adds a SEMD to the freelist.
+ *
+ * Parameters:
+ * - toFree  The SEMD to add to the
+ *           freelist.
+ *
+ * End State:
+ * - toFree is cleared and in the
+ *   freelist.
+ ****/
 HIDDEN void freeASL(semd_t* toFree)
 {
     toFree->s_next = freeList;
@@ -68,12 +95,31 @@ HIDDEN void freeASL(semd_t* toFree)
     freeList = toFree;
 }
 
-// insert p into semd_t list where s_semAdd = semAdd
-// returns TRUE if the pcb can't be added
+
+/***************************** Public Fucntions ******************************/
+
+/**** insertBlocked
+ * Inserts a PCB with semAdd into the 
+ * proper list, adding a new SEMD at
+ * the proper place if needed.
+ *
+ * Parameters:
+ * - p       The PCB to add to the list.
+ * - semAdd  The semaphore to add p to.
+ *
+ * End State:
+ * - p is now added at a SEMD with a
+ *   semaphore of semAdd.
+ * - Returns TRUE if no SEMD is available
+ *   to add when one is needed.  Returns
+ *   FALSE in all other case.
+ ****/
 int insertBlocked (int *semAdd, pcb_t *p)
 {
     semd_t* prev = find(semAdd);
-    semd_t* sem = prev->s_next;
+    semd_t* sem = prev->s_next; 
+
+    // case we need to add a SEMD
     if (sem->s_semAdd != semAdd)
     {
         sem = getFreeASL(semAdd);
@@ -82,12 +128,27 @@ int insertBlocked (int *semAdd, pcb_t *p)
         prev->s_next = sem;
         sem->s_semAdd = semAdd;
     }
+
+    // add the PCB
     p->p_semAdd = semAdd;
     insertProcQ(&(sem->s_tp),p);
     return FALSE;
 }
 
-// remove the top pcb_t from semd_t where s_semAdd == semAdd
+
+/**** removeBlocked
+ * Removes the top PCB from the SEMD
+ * with a semaphore of semAdd and
+ * return it.
+ *
+ * Parameters:
+ * - semAdd  The semaphore to remove from.
+ *
+ * End State:
+ * - Returns NULL if the SEMD with semAdd
+ *   does not exist. Returns the removed 
+ *   PCB otherwise.
+ ****/
 pcb_t* removeBlocked (int *semAdd)
 {
     semd_t* prev = find(semAdd);
@@ -95,6 +156,7 @@ pcb_t* removeBlocked (int *semAdd)
     {
         pcb_t* ret = removeProcQ(&(prev->s_next->s_tp));
 
+        // case SEMD is empty and needs to be removed
         if (emptyProcQ(prev->s_next->s_tp))
         {
             semd_t* tmp = prev->s_next;
@@ -104,10 +166,24 @@ pcb_t* removeBlocked (int *semAdd)
         
         return ret;
     }
+    // case SEMD doesn't exist
     return NULL;
 }
 
-// remove from middle of a list
+
+/**** outBlocked
+ * Removes the a PCB from the SEMD
+ * with a semaphore of it's semAdd
+ * and return it.
+ *
+ * Parameters:
+ * - pcb     The PCB to remove.
+ *
+ * End State:
+ * - Returns the PCB after removing it.
+ * - Returns NULL if the PCB isn't in a
+ *   SEMD's list.
+ ****/
 pcb_t* outBlocked (pcb_t *pcb)
 {
     semd_t* prev = find(pcb->p_semAdd);
@@ -115,19 +191,34 @@ pcb_t* outBlocked (pcb_t *pcb)
     {
         pcb_t* ret = outProcQ(&(prev->s_next->s_tp),pcb);
 
+        // remove the empty SEMD
         if (emptyProcQ(prev->s_next->s_tp))
         {
             semd_t* tmp = prev->s_next;
             prev->s_next = prev->s_next->s_next;
             freeASL(tmp);
         }
-
         return ret;
     }
+    // case SEMD doesn't exist
     return NULL;
 }
 
-// view top pcb_t of a given semaphore
+
+/**** headBlocked
+ * Retuns the first PCB with a given
+ * semaphore address.
+ *
+ * Parameters:
+ * - semAdd  The address of the semaphore
+ *           that the SEMD has that should
+ *           returns it's first PCB.
+ *
+ * End State:
+ * - Returns the PCB of the SEMD with a 
+ *   semaphore of semAdd.
+ * - Returns NULL if the SEMD doesn't exist.
+ ****/
 pcb_t* headBlocked (int *semAdd)
 {
     semd_t* prev = find(semAdd);
@@ -140,11 +231,37 @@ pcb_t* headBlocked (int *semAdd)
 }
 
 
-int aslEmtpy (semd_t** head) 
+/**** aslEmpty
+ * Checks to see if the ASL is empty.
+ *
+ * Parameters:
+ * - head    The head of the ASL to check.
+ *
+ * End State:
+ * - Returns TRUE if the ASL is empty.
+ *   Returns FALSE otherwise.
+ ****/
+int aslEmpty (semd_t** head) 
 {
     return (*head)->s_next->s_semAdd == MAXINT;
 }
 
+
+/**** initASL
+ * Initializes the SEMDs and inserts them
+ * into the freelist.
+ * Sets up the ASL to have two dummy nodes
+ * with semAdd of 0 and MAXINT.
+ * Should only be run once.
+ *
+ * Parameters:
+ *
+ * End State:
+ * - The freelist is populated with MAXPROC
+ *   empty SEMDs.
+ * - The ASL is populated with two dummy
+ *   nodes with semAdd of 0 and MAXINT.
+ ****/
 void initASL()
 {
     static semd_t aslList[MAXPROC+2];

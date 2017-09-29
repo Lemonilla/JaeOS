@@ -1,12 +1,12 @@
-/************************************PCB.C************************************
-* Written by Neal Troscinski and Timothy Wright
-*
-* This application manages a circular doubly linked queue of Process Control 
-* Blocks.  Each queue is referenced by its tail pointer as to allow for the 
-* insert and remove operations to be a constant time operation.
-* It is doubly linked so that we may insert and remove from the middle of the 
-* queue.
-******************************************************************************/
+/*******************************PCB.C********************************
+ * Written by Neal Troscinski and Timothy Wright
+ *
+ * This application manages a circular doubly linked queue of 
+ * Process Control Blocks.  Each queue is referenced by its tail 
+ * pointer as to allow for the insert and remove operations to be 
+ * a constant time operation. It is doubly linked so that we may 
+ * insert and remove from the middle of the queue.
+ *******************************************************************/
 
 #include "../h/types.h"
 #include "../h/const.h"
@@ -15,7 +15,7 @@
 HIDDEN pcb_t* freeList;
 
 
-/***************************** Private Fucntions *****************************/
+/************************ Private Fucntions ************************/
 
 /**** insertSibling (private)
  * Recursivly walks down a sibling tree
@@ -47,7 +47,7 @@ HIDDEN void insertSibling (pcb_t* sister, pcb_t* baby)
 }
 
 
-/***************************** Public Fucntions ******************************/
+/************************ Public Fucntions *************************/
 
 /**** freePcb
  * Inserts a pcb into the freelist.

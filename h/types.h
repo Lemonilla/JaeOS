@@ -25,6 +25,8 @@ typedef struct pcb_t {
     state_t        p_s;         /* processor state       */
     int            *p_semAdd;   /* ptr to semaphore on   */
                                 /* which proc is blocked */
+    int            p_cpuTime;
+    int            p_startTime;
 }  pcb_t, *pcb_PTR;
 
 /* semaphore descriptor type */

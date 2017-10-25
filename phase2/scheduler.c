@@ -8,17 +8,12 @@ void scheduler()
     if (next == NULL)
     {
         // check if processCount = 0
-        if (processCount == 0) 
-        {
-            // is so, HALT()
-            HALT();
-        }
+        if (processCount == 0) HALT();
+
         // if not:
         // check softblock count = 0
-        if (softblock != 0)
-        {
-            WAIT();
-        }
+        if (softblock != 0) WAIT(); 
+        
         PANIC();
     }
     

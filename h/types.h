@@ -27,6 +27,11 @@ typedef struct pcb_t {
                                 /* which proc is blocked */
     int            p_cpuTime;
     int            p_startTime;
+                                /* 0: Program Trap Handler */
+                                /* 1: TLB Handler          */
+                                /* 2: SysCall Handler      */
+    int            p_customHanders[3];
+
 }  pcb_t, *pcb_PTR;
 
 /* semaphore descriptor type */

@@ -2,6 +2,16 @@
 // Neal Troscinski & Timmy Wright
 
 
+void killFamily(pcb_t* p)
+{
+    if (p == NULL) return;
+    if (p->child != NULL) killFamily(p->child);
+    pcb_t* tmp = p->next;
+    freePCB(p);
+    killFamily(tmp);
+}
+
+
 void programTrapHandler()
 {
     // if pcb_t->trapHander[w/e we need] == NULL 
@@ -24,6 +34,7 @@ void TLBExceptionHandler()
 
 sysCall()
 {
+    
     // turn off interrupts
 
     // if in kernal mode
@@ -59,18 +70,28 @@ sysCall()
 
 void sys1() // Babies
 {
+    state_t* s = (state_t*) OLDSYS;
     // make new proc
+    pcb_t* p = allocPcb();
+    if (p == NULL) {
+        s->A1 = -1; // return error code
+        LDST(s);
+    }
+    s->A1 = 0; // return OK code
+    insertChild(currentProc,p); // make it a child of currentProc
+
 
     // if can't make, A1 = -1
     // else A1 = 0
     // turn on interrupts
     // load oldSys
+    LDST(s);
 }
 
 void sys2() // GLASS 'EM
 {
     // kill a proc & all it's children
-    // freePCB()
+    
 
     // turn on interrupts
     // load oldSys

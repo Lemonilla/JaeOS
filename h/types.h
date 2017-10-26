@@ -25,12 +25,16 @@ typedef struct pcb_t {
     state_t        p_s;         /* processor state       */
     int            *p_semAdd;   /* ptr to semaphore on   */
                                 /* which proc is blocked */
-    int            p_cpuTime;
+    uint           p_cpuTime;   /* time on cpu.          */
+                                /* uint > int in size.   */
     int            p_startTime;
-                                /* 0: Program Trap Handler */
-                                /* 1: TLB Handler          */
-                                /* 2: SysCall Handler      */
-    int            p_customHanders[3];
+                                /* 0: PGM_OLD */
+                                /* 1: TLB_OLD */
+                                /* 2: SYS_OLD */
+                                /* 3: PGM_NEW */
+                                /* 4: TLB_NEW */
+                                /* 5: SYS_NEW */
+    int            p_handlers[6];
 
 }  pcb_t, *pcb_PTR;
 

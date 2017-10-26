@@ -12,9 +12,14 @@ void scheduler()
 
         // if not:
         // check softblock count = 0
-        if (softblock != 0) WAIT(); 
+        if (softblock != 0) 
+        {
+            // TURN ON INTERRUPTS!
+            WAIT();
+        } 
         
         PANIC();
+        
     }
     
         

@@ -14,7 +14,7 @@ pcb_t* readyQ = mkEmptyProcQ();
 pcb_t* currentProc = NULL;
 
 // init device semaphors
-// index of device semaphore is (Line# - 1) * 16 + Device#
+// index of device semaphore is Line# * 16 + Device#
 int devSem[16*NUMOFDEVICELINES];
 for (int i = 0; i < 16*NUMOFDEVICELINES; i++) devSem[i] = 0;
 

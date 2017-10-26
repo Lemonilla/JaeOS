@@ -9,6 +9,38 @@
 #include "../e/interrupt.e"
 #include "../e/scheduler.e"
 
+HIDDEN void killGeneration(pcb_t* p)
+{
+    pcb_t* tmp;
+    pcb_t* removedProc;
+    while(p != NULL)
+    {
+        // if we have a child, kill that generation
+        if (p->p_child != NULL)
+        {
+            killChildRow(p->p_child);
+        }
+
+        // get the next child in line
+        tmp = p->p_sib;
+
+        // remove from the lists we need to
+        removedProc = outProcQ(readyQ,p);
+        if (removedProc == NULL)
+        {
+            // we're on the ASL
+            removedProc = outBlocked(p);
+            // FIX SOFTBLOCK IF NEEDED!!!!!!!
+        }
+
+        // Free it for use later
+        freePcb(p);
+
+        // move to next one
+        p = tmp;
+    }
+}
+
 void programTrapHandler()
 {
     if (currentProc->p_handlers[CUSTOM_PGM_NEW] == NULL)
@@ -45,8 +77,8 @@ void TLBExceptionHandler()
 
 sysCall()
 {
-    // turn off interrupts <----- HOW DO WE DO THIS?  WHICH CPSR are we changing?
-    currentProc->p_s->CPSR = currentProc->p_s->CPSR | INT_DISABLED;
+    // turn off interrupts <----- WHICH CPSR are we changing?
+    currentProc->p_s->CPSR |= INT_DISABLED;
 
     state_t* currentState = (state_t*) SYSOLD
 
@@ -88,7 +120,7 @@ sysCall()
     programTrapOld = sysHandlerOld;
 
     // update cause to RI (reserved instruction)
-    programTrapOld->CP15_CAUSE = ALLOFF | RESERVED_INSTRUCTION_CODE // <----- DEFINE THIS VALUE IN const.h LATER!
+    programTrapOld->CP15_CAUSE = ALLOFF | RESERVED_INSTRUCTION_CODE
 
     // turn on interrupts
     currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
@@ -123,10 +155,17 @@ void sys1() // Babies
 void sys2() // GLASS 'EM
 {
     // kill a proc & all it's children
+    pcb_t* p = currentProc;
+    if (p->p_child != NULL) 
+    {
+        killGeneration(p->p_child);
+    }
+    // p can't be in a queue since it's currentProc
+    // so we can just kill it
+    freePcb(p);
     
-
-    // turn on interrupts    
-    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
+    // turn on interrupts <--- do this if we  killed the proc?
+    // currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
     
     scheduler();
 }
@@ -176,7 +215,7 @@ void sys5() // set custom handler
     uint new = currentProc->p_s->A4;
 
     // if we've already done this, GLASS 'EM
-    if (currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] == NULL) 
+    if (currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] == NULL)
     {
         sys2();
     }
@@ -212,7 +251,7 @@ void sys7() // wait 100 ms
 {
     // time update handled in sys4
     // call sys 4 on psudo-timer for requesting process
-    currentProc->p_s->A2 = PSUDOTIMER_SEM_ADDRESS
+    currentProc->p_s->A2 = semDev[PSUDOTIMER_SEM_INDEX]
     sys4();
 }
 
@@ -225,10 +264,10 @@ void sys8() // wait for I/O
     // softblocked += 1
     softblocked++;
 
-    // index of device semaphore is (Line# - 1) * 16 + Device#
+    // index of device semaphore is Line# * 16 + Device#
     int lineNum = currentProc->p_s->A2;
     int devNum = currentProc->p_s->A3;
-    int semIndex = (lineNum - 1)*16 + devNum;
+    int semIndex = lineNum*16 + devNum;
     int semAdd = &devSem[semIndex];
     // call sys 4 on IO's semaphore
     currentProc->p_s->A2 = semAdd;

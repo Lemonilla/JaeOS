@@ -1,6 +1,11 @@
 // initial.c
 // Neal Troscinski & Timmy Wright
 
+#include "../h/const.h"
+#include "../h/types.h"
+#include "../e/asl.e"
+#include "../e/pcb.e"
+#include "../e/scheduler.e"
 
 // initialize kernal variables
 int processCount = 0;
@@ -13,7 +18,7 @@ pcb_t* currentProc = NULL;
 int devSem[16*NUMOFDEVICELINES];
 for (int i = 0; i < 16*NUMOFDEVICELINES; i++) devSem[i] = 0;
 
-void main()
+void _start()
 {
     // initialize the Process Control Blocks
     initPCB() 

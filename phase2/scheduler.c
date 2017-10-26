@@ -1,6 +1,14 @@
 // scheduler.c
 // Neal Troscinski & Timmy Wright
 
+#include "../h/const.h"
+#include "../h/types.h"
+#include "../e/asl.e"
+#include "../e/pcb.e"
+#include "../e/initial.e"
+#include "../e/exceptions.e"
+#include "../e/interrupt.e"
+
 void scheduler()
 {
     pcb_t* next = removeProcQ();
@@ -19,7 +27,7 @@ void scheduler()
         } 
         
         PANIC();
-        
+
     }
     
         

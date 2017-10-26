@@ -27,8 +27,8 @@
 #define ALLOFF                  0x00000000
 #define SYS_MODE                0x0000001F
 #define USR_MODE                0x00000010
-#define INT_DISABLED            0x000000C0
-#define INT_ENABLED             0x00000000
+#define INT_DISABLED            0x000000C0 // | with w/e to turn them off
+#define INT_ENABLED             0xFFFFFF3F // & with w/e to turn them on
 
 #define INTNEW                  0x00007058
 #define INTOLD                  0x00007000

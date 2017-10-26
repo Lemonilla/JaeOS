@@ -1,6 +1,14 @@
 // interrupts.c
 // Neal Troscinski & Timmy Wright
 
+#include "../h/const.h"
+#include "../h/types.h"
+#include "../e/asl.e"
+#include "../e/pcb.e"
+#include "../e/initial.e"
+#include "../e/exceptions.e"
+#include "../e/scheduler.e"
+
 void InterruptHandler()
 {
     // figure out highest priority device alert

@@ -1,6 +1,13 @@
 // exceptions.c
 // Neal Troscinski & Timmy Wright
 
+#include "../h/const.h"
+#include "../h/types.h"
+#include "../e/asl.e"
+#include "../e/pcb.e"
+#include "../e/initial.e"
+#include "../e/interrupt.e"
+#include "../e/scheduler.e"
 
 void programTrapHandler()
 {
@@ -39,6 +46,7 @@ void TLBExceptionHandler()
 sysCall()
 {
     // turn off interrupts <----- HOW DO WE DO THIS?  WHICH CPSR are we changing?
+    currentProc->p_s->CPSR = currentProc->p_s->CPSR | INT_DISABLED;
 
     state_t* currentState = (state_t*) SYSOLD
 
@@ -82,6 +90,9 @@ sysCall()
     // update cause to RI (reserved instruction)
     programTrapOld->CP15_CAUSE = ALLOFF | RESERVED_INSTRUCTION_CODE // <----- DEFINE THIS VALUE IN const.h LATER!
 
+    // turn on interrupts
+    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
+
     // goto program trap handler
     state_t* programTrapNew = (unsigned int) PGMTNEW;
     LDST(programTrapNew);
@@ -103,7 +114,7 @@ void sys1() // Babies
     }
 
     // turn on interrupts
-
+    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
 
     // load oldSys
     LDST(currentProc->p_s);
@@ -114,8 +125,10 @@ void sys2() // GLASS 'EM
     // kill a proc & all it's children
     
 
-    // turn on interrupts
-    // load oldSys
+    // turn on interrupts    
+    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
+    
+    scheduler();
 }
 
 void sys3() // signal
@@ -129,7 +142,8 @@ void sys3() // signal
     insertProcQ(p,readyQ);
 
     // turn on interrupts
-
+    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
+    
     // load oldSys
     LDST(s);
 }
@@ -143,6 +157,7 @@ void sys4() // wait
     insertBlocked(currentProc, currentProc->p_s->A2);
 
     // turn on interrupts
+    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
 
     // move onto next thing
     scheduler();
@@ -171,6 +186,7 @@ void sys5() // set custom handler
     currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] = new;
         
     // turn on interrupts
+    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
 
     // reload state and continue execution
     LDST(currentProc->p_s);
@@ -186,6 +202,7 @@ int sys6() // get CPU time
     currentProc->p_s->A1 = currentProc->p_cpuTime;
 
     // turn on interrupts
+    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
 
     // load oldSys
     LDST(currentProc->p_s);
@@ -193,8 +210,10 @@ int sys6() // get CPU time
 
 void sys7() // wait 100 ms
 {
-    // update currentProc cpu time
-    // call sys 4 on psudo-timer for requresting process
+    // time update handled in sys4
+    // call sys 4 on psudo-timer for requesting process
+    currentProc->p_s->A2 = PSUDOTIMER_SEM_ADDRESS
+    sys4();
 }
 
 void sys8() // wait for I/O

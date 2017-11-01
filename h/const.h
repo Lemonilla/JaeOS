@@ -20,6 +20,7 @@
 #define FALSE                       0
 
 #define QUANTOM                     5000
+#define WORDSIZE                    4
 #define PAGESIZE                    4000
 
 #define RAMTOP                      0x00000204

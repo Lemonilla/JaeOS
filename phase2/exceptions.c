@@ -26,11 +26,11 @@ HIDDEN void killGeneration(pcb_t* p)
 
         // remove from the lists we need to
         removedProc = outProcQ(readyQ,p);
-        if (removedProc == NULL)
+        if (remove0dProc == NULL)
         {
             // we're on the ASL
             removedProc = outBlocked(p);
-            // FIX SOFTBLOCK IF NEEDED!!!!!!!
+            *(p->p_semAdd)--; // fix semaphore
         }
 
         // Free it for use later
@@ -43,6 +43,9 @@ HIDDEN void killGeneration(pcb_t* p)
 
 void programTrapHandler()
 {
+    // increment pc
+    currentProc->p_s->pc += WORDSIZE;
+
     if (currentProc->p_handlers[CUSTOM_PGM_NEW] == NULL)
     {
         // if we haven't specified what to do here, GLASS 'EM
@@ -60,6 +63,9 @@ void programTrapHandler()
 
 void TLBExceptionHandler()
 {
+    // increment pc
+    currentProc->p_s->pc += WORDSIZE;
+
     if (currentProc->p_handlers[CUSTOM_TLB_NEW] == NULL)
     {
         // if we haven't specified what to do here, GLASS 'EM
@@ -77,9 +83,9 @@ void TLBExceptionHandler()
 
 sysCall()
 {
-    // turn off interrupts <----- WHICH CPSR are we changing?
-    currentProc->p_s->CPSR |= INT_DISABLED;
-
+    // increment pc
+    currentProc->p_s->pc += WORDSIZE;
+    
     state_t* currentState = (state_t*) SYSOLD
 
     // if in kernal mode
@@ -122,9 +128,6 @@ sysCall()
     // update cause to RI (reserved instruction)
     programTrapOld->CP15_CAUSE = ALLOFF | RESERVED_INSTRUCTION_CODE
 
-    // turn on interrupts
-    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
-
     // goto program trap handler
     state_t* programTrapNew = (unsigned int) PGMTNEW;
     LDST(programTrapNew);
@@ -145,9 +148,6 @@ void sys1() // Babies
         insertChild(currentProc,p); // make it a child of currentProc
     }
 
-    // turn on interrupts
-    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
-
     // load oldSys
     LDST(currentProc->p_s);
 }
@@ -164,9 +164,6 @@ void sys2() // GLASS 'EM
     // so we can just kill it
     freePcb(p);
     
-    // turn on interrupts <--- do this if we  killed the proc?
-    // currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
-    
     scheduler();
 }
 
@@ -180,9 +177,6 @@ void sys3() // signal
 
     insertProcQ(p,readyQ);
 
-    // turn on interrupts
-    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
-    
     // load oldSys
     LDST(s);
 }
@@ -194,9 +188,6 @@ void sys4() // wait
 
     // insert into ASL
     insertBlocked(currentProc, currentProc->p_s->A2);
-
-    // turn on interrupts
-    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
 
     // move onto next thing
     scheduler();
@@ -223,9 +214,6 @@ void sys5() // set custom handler
     // set old/new in address array
     currentProc->p_handlers[handlerId] = old;
     currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] = new;
-        
-    // turn on interrupts
-    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
 
     // reload state and continue execution
     LDST(currentProc->p_s);
@@ -239,9 +227,6 @@ int sys6() // get CPU time
 
     // set oldSys's A1 to cpu time
     currentProc->p_s->A1 = currentProc->p_cpuTime;
-
-    // turn on interrupts
-    currentProc->p_s->CPSR = currentProc->p_s->CPSR & INT_ENABLED;
 
     // load oldSys
     LDST(currentProc->p_s);

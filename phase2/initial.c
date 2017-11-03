@@ -18,6 +18,33 @@ pcb_t* currentProc = NULL;
 int devSem[16*NUMOFDEVICELINES];
 for (int i = 0; i < 16*NUMOFDEVICELINES; i++) devSem[i] = 0;
 
+
+void copyState(state_t* copy, state_t* initial)
+{
+    copy->a1 = initial->a1;
+    copy->a2 = initial->a2;
+    copy->a3 = initial->a3;
+    copy->a4 = initial->a4;
+    copy->v1 = initial->v1;
+    copy->v2 = initial->v2;
+    copy->v3 = initial->v3;
+    copy->v4 = initial->v4;
+    copy->v5 = initial->v5;
+    copy->v6 = initial->v6;
+    copy->fp = initial->fp;
+    copy->ip = initial->ip;
+    copy->sp = initial->sp;
+    copy->lr = initial->lr;
+    copy->pc = initial->pc;
+    copy->cpsr = initial->cpsr;
+    copy->CP15_Control = initial->CP15_Control;
+    copy->CP15_EntryHi = initial->CP15_EntryHi;
+    copy->CP15_Cause = initial->CP15_Cause;
+    copy->TOD_Hi = initial->TOD_Hi;
+    copy->TOD_Lo = initial->TOD_Lo;    
+}
+
+
 void _start()
 {
     // initialize the Process Control Blocks
@@ -51,8 +78,9 @@ void _start()
     pcb_t* firstProc = allocPcb();
     firstProc->p_s = (unsigned int) test;    // <--- where is this?
     firstProc->p_s->sp = RAM_TOP - PAGESIZE;  // already set?
-    firstProc->p_s->->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
+    firstProc->p_s->->cpsr = ALLOFF | SYS_MODE | INT_ENABLED;
     insertProcQ(firstProc,readyQ);
+    processCount++;
 
     // call scheduler and we're done
     scheduler();

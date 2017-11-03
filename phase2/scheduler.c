@@ -22,7 +22,9 @@ void scheduler()
         // check softblock count = 0
         if (softblock != 0) 
         {
+            currentProc = NULL;
             // TURN ON INTERRUPTS!
+            // HOW???
             WAIT();
         } 
         
@@ -41,5 +43,5 @@ void scheduler()
     SETTIMER(QUANTUM);
 
     // load state in p
-    LDST(currentProc->p_s);
+    LDST(&(currentProc->p_s));
 }

@@ -138,6 +138,9 @@ void sys1() // Babies
     // make new proc
     pcb_t* p = allocPcb();
 
+    // update currentProc's state
+    copyState(&(currentProc->p_s),OLDSYS);
+
     // default we can't make a child ;_;
     currentProc->p_s->A1 = -1; // return error code
 
@@ -148,7 +151,7 @@ void sys1() // Babies
         insertChild(currentProc,p); // make it a child of currentProc
     }
 
-    // load oldSys
+    // resume execution
     LDST(currentProc->p_s);
 }
 
@@ -177,7 +180,7 @@ void sys3() // signal
 
     insertProcQ(p,readyQ);
 
-    // load oldSys
+    // resume execution
     LDST(s);
 }
 
@@ -195,6 +198,9 @@ void sys4() // wait
 
 void sys5() // set custom handler
 {
+    // update currentProc state
+    copyState(&(currentProc->p_s),OLDSYS);
+
     /* 0: PGM_OLD */
     /* 1: TLB_OLD */
     /* 2: SYS_OLD */
@@ -221,6 +227,9 @@ void sys5() // set custom handler
 
 int sys6() // get CPU time
 {
+    // update currentProc state
+    copyState(&(currentProc->p_s),OLDSYS);
+
     // update time
     currentProc->p_cpuTime += TODCLOCK() - currentProc->p_startTime;
     currentProc->p_startTime = TODCLOCK();
@@ -234,6 +243,9 @@ int sys6() // get CPU time
 
 void sys7() // wait 100 ms
 {
+    // update currentProc state
+    copyState(&(currentProc->p_s),OLDSYS);
+    
     // time update handled in sys4
     // call sys 4 on psudo-timer for requesting process
     currentProc->p_s->A2 = semDev[PSUDOTIMER_SEM_INDEX]
@@ -242,6 +254,9 @@ void sys7() // wait 100 ms
 
 void sys8() // wait for I/O
 {
+    // update currentProc state
+    copyState(&(currentProc->p_s),OLDSYS);
+
     // timing stuff
     currentProc->p_cpuTime += TODCLOCK() - currentProc->p_startTime;
     currentProc->p_startTime = TODCLOCK();

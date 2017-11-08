@@ -22,7 +22,6 @@ pcb_t* currentProc = NULL;
 // index of device semaphore is Line# * 16 + Device#
 int devSem[16*NUMOFDEVICELINES];
 
-
 void copyState(state_t* copy, state_t* initial)
 {
     copy->a1 = initial->a1;
@@ -67,28 +66,28 @@ void _start()
 
     // initialize the exception handler table
     state_t* intNew = (state_t *) INTNEW;
-    intNew->pc = (unsigned int) interruptHandler;
+    intNew->pc = (uint) interruptHandler;
     intNew->sp = RAM_TOP;
     intNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
 
     state_t* tlbNew = (state_t *) TLBNEW;
-    tlbNew->pc = (unsigned int) TLBExceptionHandler;
+    tlbNew->pc = (uint) TLBExceptionHandler;
     tlbNew->sp = RAM_TOP;
     tlbNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
 
     state_t* pgmtNew = (state_t *) PGMTNEW;
-    pgmtNew->pc = (unsigned int) programTrapHandler;
+    pgmtNew->pc = (uint) programTrapHandler;
     pgmtNew->sp = RAM_TOP;
     pgmtNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
 
     state_t* sysNew = (state_t *) SYSNEW;
-    sysNew->pc = (unsigned int) sysCall;
+    sysNew->pc = (uint) sysCall;
     sysNew->sp = RAM_TOP;
     sysNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
 
     // initialize first process
     pcb_t* firstProc = allocPcb();
-    firstProc->p_s.pc = (unsigned int) test;
+    firstProc->p_s.pc = (uint) test;
     firstProc->p_s.sp = RAM_TOP - PAGESIZE;  // already set?
     firstProc->p_s.cpsr = ALLOFF | SYS_MODE | INT_ENABLED;
     insertProcQ(&readyQ,firstProc);

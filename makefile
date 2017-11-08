@@ -13,8 +13,8 @@ LD = arm-none-eabi-ld
 #main target
 all: kernel.core.uarm 
 
-kernel.core.uarm: p2test.o initial.o interrupts.o scheduler.o exceptions.o asl.o pcb.o 
-	$(LD) $(LDCOREFLAGS) -o kernel.core.uarm initial.o interrupts.o scheduler.o exceptions.o asl.o pcb.o $(SUPDIR)/crtso.o $(SUPDIR)/libuarm.o
+kernel.core.uarm: p2test.o initial.o interrupt.o scheduler.o exceptions.o asl.o pcb.o 
+	$(LD) $(LDCOREFLAGS) -o kernel.core.uarm initial.o interrupt.o scheduler.o exceptions.o asl.o pcb.o $(SUPDIR)/crtso.o $(SUPDIR)/libuarm.o
 
 p2test.o: phase2/p2test.c $(DEFS)
 	$(CC) $(CFLAGS) phase2/p2test.c
@@ -22,7 +22,7 @@ p2test.o: phase2/p2test.c $(DEFS)
 initial.o: phase2/initial.c $(DEFS)
 	$(CC) $(CFLAGS) phase2/initial.c
 
-interrupts.o: phase2/interrupt.c $(DEFS)
+interrupt.o: phase2/interrupt.c $(DEFS)
 	$(CC) $(CFLAGS) phase2/interrupt.c
  
 scheduler.o: phase2/scheduler.c $(DEFS)

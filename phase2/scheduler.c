@@ -11,7 +11,12 @@
 
 void scheduler()
 {
-    pcb_t* next = removeProcQ();
+    // we're done with our timeslice, get back in line
+    insertProcQ(&readyQ, currentProc);
+
+    // get next in line
+    pcb_t* next = removeProcQ(&readyQ);
+
     // if list is empty
     if (next == NULL)
     {
@@ -20,27 +25,27 @@ void scheduler()
 
         // if not:
         // check softblock count = 0
-        if (softblock != 0) 
+        if (softBlockCount != 0) 
         {
             currentProc = NULL;
             // TURN ON INTERRUPTS!
-            // HOW???
+            // using getSTATUS and setSTATUS
             WAIT();
         } 
         
+        // we've hit deadlock
         PANIC();
-
     }
     
         
     // if list is not empty
-    // if currentProc is done
     currentProc = next;
+
     // start timer thing
-    currentProc->p_startTime = TODTIMER() // what's that called?
+    currentProc->p_startTime = TODTIMER();
 
     // set timer
-    SETTIMER(QUANTUM);
+    setTIMER(QUANTOM);
 
     // load state in p
     LDST(&(currentProc->p_s));

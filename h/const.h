@@ -78,5 +78,13 @@
 #define DEV_FLAG_PTR                0x00006fe0
 #define DEV_REG_TABLE               0x000002d8
 
+
+// DEVICE REGISTER COMMANDS
+#define RESET                       0
+#define ACK                         1
+#define SEEKCYL                     2
+#define READBLK                     3
+#define WRITEBLK                    4
+
 #endif
 

@@ -18,7 +18,7 @@ HIDDEN void killGeneration(pcb_t* p)
         // if we have a child, kill that generation
         if (p->p_child != NULL)
         {
-            killChildRow(p->p_child);
+            killGeneration(p->p_child);
         }
 
         // get the next child in line
@@ -26,7 +26,7 @@ HIDDEN void killGeneration(pcb_t* p)
 
         // remove from the lists we need to
         removedProc = outProcQ(readyQ,p);
-        if (remove0dProc == NULL)
+        if (removedProc == NULL)
         {
             // we're on the ASL
             removedProc = outBlocked(p);
@@ -44,7 +44,7 @@ HIDDEN void killGeneration(pcb_t* p)
 void programTrapHandler()
 {
     // increment pc
-    currentProc->p_s->pc += WORDSIZE;
+    currentProc->p_s.pc += WORDSIZE;
 
     if (currentProc->p_handlers[CUSTOM_PGM_NEW] == NULL)
     {
@@ -64,7 +64,7 @@ void programTrapHandler()
 void TLBExceptionHandler()
 {
     // increment pc
-    currentProc->p_s->pc += WORDSIZE;
+    currentProc->p_s.pc += WORDSIZE;
 
     if (currentProc->p_handlers[CUSTOM_TLB_NEW] == NULL)
     {
@@ -84,13 +84,13 @@ void TLBExceptionHandler()
 sysCall()
 {
     // increment pc
-    currentProc->p_s->pc += WORDSIZE;
+    currentProc->p_s.pc += WORDSIZE;
     
-    state_t* currentState = (state_t*) SYSOLD
+    state_t* currentState = (state_t*) SYSOLD;
 
     // if in kernal mode
-    if (currentState->CPSR & SYS_MODE == SYS_MODE)
-        switch(currentState->A1) // on syscall arg
+    if (currentState->cpsr & SYS_MODE == SYS_MODE)
+        switch(currentState->a1) // on syscall arg
         {
             case 1: // - BIRTH NEW PROC
                 sys1();
@@ -114,22 +114,22 @@ sysCall()
                 {
                     // we have custom handler for these calls
                     // so lets go there instead.
-                    LDST(currentProc->p_handlers[CUSTOM_SYS_NEW])
+                    LDST(currentProc->p_handlers[CUSTOM_SYS_NEW]);
                 }
                 // otherwise, GLASS 'EM
                 sys2();
         }
     // if in User Mode
     // save old state in PGTold
-    state_t* programTrapOld = (unsigned int) PGMTOLD;
-    state_t* sysHandlerOld = (unsigned int) SYSOLD;
+    state_t* programTrapOld = (uint) PGMTOLD;
+    state_t* sysHandlerOld = (uint) SYSOLD;
     programTrapOld = sysHandlerOld;
 
     // update cause to RI (reserved instruction)
-    programTrapOld->CP15_CAUSE = ALLOFF | RESERVED_INSTRUCTION_CODE
+    programTrapOld->CP15_Cause = ALLOFF | RESERVED_INSTRUCTION_CODE;
 
     // goto program trap handler
-    state_t* programTrapNew = (unsigned int) PGMTNEW;
+    state_t* programTrapNew = (uint) PGMTNEW;
     LDST(programTrapNew);
 }
 
@@ -139,15 +139,15 @@ void sys1() // Babies
     pcb_t* p = allocPcb();
 
     // update currentProc's state
-    copyState(&(currentProc->p_s),OLDSYS);
+    copyState(&(currentProc->p_s),SYSOLD);
 
     // default we can't make a child ;_;
-    currentProc->p_s->A1 = -1; // return error code
+    currentProc->p_s.a1 = -1; // return error code
 
     // if we can, fix return value and make the child
     if (p != NULL)
     {
-        currentProc->p_s->A1 = 0; // return OK code
+        currentProc->p_s.a1 = 0; // return OK code
         insertChild(currentProc,p); // make it a child of currentProc
     }
 
@@ -172,11 +172,11 @@ void sys2() // GLASS 'EM
 
 void sys3() // signal
 {
-    state_t* s = (state_t*) OLDSYS;
+    state_t* s = (state_t*) SYSOLD;
 
     // signal on sem s
     // p = removeBlocked()
-    pcb_t* p = removeBlocked(s->A2);
+    pcb_t* p = removeBlocked(s->a2);
 
     insertProcQ(p,readyQ);
 
@@ -190,7 +190,7 @@ void sys4() // wait
     currentProc->p_cpuTime += TODCLOCK() - currentProc->p_startTime;
 
     // insert into ASL
-    insertBlocked(currentProc, currentProc->p_s->A2);
+    insertBlocked(currentProc, currentProc->p_s.a2);
 
     // move onto next thing
     scheduler();
@@ -199,7 +199,7 @@ void sys4() // wait
 void sys5() // set custom handler
 {
     // update currentProc state
-    copyState(&(currentProc->p_s),OLDSYS);
+    copyState(&(currentProc->p_s),SYSOLD);
 
     /* 0: PGM_OLD */
     /* 1: TLB_OLD */
@@ -207,9 +207,9 @@ void sys5() // set custom handler
     /* 3: PGM_NEW */
     /* 4: TLB_NEW */
     /* 5: SYS_NEW */
-    int handlerId = currentProc->p_s->A2;
-    uint old = currentProc->p_s->A3;
-    uint new = currentProc->p_s->A4;
+    int handlerId = currentProc->p_s.a2;
+    uint old = currentProc->p_s.a3;
+    uint new = currentProc->p_s.a4;
 
     // if we've already done this, GLASS 'EM
     if (currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] == NULL)
@@ -228,14 +228,14 @@ void sys5() // set custom handler
 int sys6() // get CPU time
 {
     // update currentProc state
-    copyState(&(currentProc->p_s),OLDSYS);
+    copyState(&(currentProc->p_s),SYSOLD);
 
     // update time
     currentProc->p_cpuTime += TODCLOCK() - currentProc->p_startTime;
     currentProc->p_startTime = TODCLOCK();
 
     // set oldSys's A1 to cpu time
-    currentProc->p_s->A1 = currentProc->p_cpuTime;
+    currentProc->p_s.a1 = currentProc->p_cpuTime;
 
     // load oldSys
     LDST(currentProc->p_s);
@@ -244,32 +244,32 @@ int sys6() // get CPU time
 void sys7() // wait 100 ms
 {
     // update currentProc state
-    copyState(&(currentProc->p_s),OLDSYS);
+    copyState(&(currentProc->p_s),SYSOLD);
     
     // time update handled in sys4
     // call sys 4 on psudo-timer for requesting process
-    currentProc->p_s->A2 = semDev[PSUDOTIMER_SEM_INDEX]
+    currentProc->p_s.a2 = devSem[PSUDOTIMER_SEM_INDEX];
     sys4();
 }
 
 void sys8() // wait for I/O
 {
     // update currentProc state
-    copyState(&(currentProc->p_s),OLDSYS);
+    copyState(&(currentProc->p_s),SYSOLD);
 
     // timing stuff
     currentProc->p_cpuTime += TODCLOCK() - currentProc->p_startTime;
     currentProc->p_startTime = TODCLOCK();
 
     // softblocked += 1
-    softblocked++;
+    softBlockCount++;
 
     // index of device semaphore is Line# * 16 + Device#
-    int lineNum = currentProc->p_s->A2;
-    int devNum = currentProc->p_s->A3;
+    int lineNum = currentProc->p_s.a2;
+    int devNum = currentProc->p_s.a3;
     int semIndex = lineNum*16 + devNum;
     int semAdd = &devSem[semIndex];
     // call sys 4 on IO's semaphore
-    currentProc->p_s->A2 = semAdd;
+    currentProc->p_s.a2 = semAdd;
     sys4();
 }

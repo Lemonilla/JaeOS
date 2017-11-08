@@ -10,8 +10,18 @@
 
 #include "/usr/include/uarm/uARMtypes.h"
 
-
 typedef unsigned int uint;
+
+typedef struct {
+    uint status;
+    uint command;
+    uint data0;
+    uint data1;
+} devregister_t;          
+
+typedef struct {
+    long lines[8];
+} devflagtable_t;
 
 /* process table entry type */
 typedef struct pcb_t {

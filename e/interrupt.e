@@ -1,6 +1,6 @@
 #ifndef INTERRUPT
 #define INTERRUPT
 
-extern void InterruptHandler();
+extern void interruptHandler();
 
 #endif

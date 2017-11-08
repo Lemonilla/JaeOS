@@ -11,7 +11,6 @@
 #include "/usr/include/uarm/arch.h"
 #include "/usr/include/uarm/uARMconst.h"
 
-
 #define MAXPROC                     20
 #define NUMOFDEVICELINES            8
 #define MAXINT                      0xFFFFFFFF
@@ -67,6 +66,17 @@
 #define TLB_MOD_ERROR               18  // TLB Modification Error
 #define RESERVED_INSTRUCTION_CODE   20  // Reserved Instruction
 
+#define FIRST_BIT_ON                0x80000000
+#define SECOND_BIT_ON               0x40000000
+#define THIRD_BIT_ON                0x20000000
+#define FOURTH_BIT_ON               0x10000000
+#define FIFTH_BIT_ON                0x08000000
+#define SIXTH_BIT_ON                0x04000000
+#define SEVENTH_BIT_ON              0x02000000
+#define EIGTH_BIT_ON                0x01000000
+
+#define DEV_FLAG_PTR                0x00006fe0
+#define DEV_REG_TABLE               0x000002d8
 
 #endif
 

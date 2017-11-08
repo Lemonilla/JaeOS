@@ -10,6 +10,9 @@
 
 #include "/usr/include/uarm/uARMtypes.h"
 
+
+typedef unsigned int uint;
+
 /* process table entry type */
 typedef struct pcb_t {
         /* process queue fields */

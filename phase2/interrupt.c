@@ -9,23 +9,24 @@
 #include "../e/exceptions.e"
 #include "../e/scheduler.e"
 
-void InterruptHandler()
+extern void interruptHandler()
 {
-
     if (currentProc == NULL) scheduler();
 
     // figure out highest priority device alert
     uint lineNumber;
     uint devNumber;
 
-    if (OLDINT->CP15_Cause & FIRST_BIT_ON)   lineNumber = 7;
-    if (OLDINT->CP15_Cause & SECOND_BIT_ON)  lineNumber = 6;
-    if (OLDINT->CP15_Cause & THIRD_BIT_ON)   lineNumber = 5;
-    if (OLDINT->CP15_Cause & FOURTH_BIT_ON)  lineNumber = 4;
-    if (OLDINT->CP15_Cause & FIFTH_BIT_ON)   lineNumber = 3;
-    if (OLDINT->CP15_Cause & SIXTH_BIT_ON)   lineNumber = 2;
-    if (OLDINT->CP15_Cause & SEVENTH_BIT_ON) lineNumber = 1;
-    if (OLDINT->CP15_Cause & EIGTH_BIT_ON)   lineNumber = 0;
+    state_t* old = (state_t*) INTOLD;
+
+    if (old->CP15_Cause & FIRST_BIT_ON)   lineNumber = 7;
+    if (old->CP15_Cause & SECOND_BIT_ON)  lineNumber = 6;
+    if (old->CP15_Cause & THIRD_BIT_ON)   lineNumber = 5;
+    if (old->CP15_Cause & FOURTH_BIT_ON)  lineNumber = 4;
+    if (old->CP15_Cause & FIFTH_BIT_ON)   lineNumber = 3;
+    if (old->CP15_Cause & SIXTH_BIT_ON)   lineNumber = 2;
+    if (old->CP15_Cause & SEVENTH_BIT_ON) lineNumber = 1;
+    if (old->CP15_Cause & EIGTH_BIT_ON)   lineNumber = 0;
 
     // if end of quantum
     if (lineNumber == 2){
@@ -36,8 +37,8 @@ void InterruptHandler()
             copyState(&(currentProc->p_s), INTOLD);
 
             //increment currentProc cpu time
-            currentTod = TODCLOCK();
-            tempTime = currentTod - currentProc->p_startTime;
+            int currentTod = TODCLOCK();
+            int tempTime = currentTod - currentProc->p_startTime;
             currentProc->p_cpuTime = tempTime;
 
             //put currentProc on readyQ
@@ -48,7 +49,7 @@ void InterruptHandler()
     }
 
     // get device number
-    unsigned int devTable = *((unsigned int) DEV_FLAG_PTR);
+    unsigned int devTable = (unsigned int) *((void*) DEV_FLAG_PTR);
     while (*devTable == 0) 
     {
         devTable += WORDSIZE;
@@ -65,11 +66,11 @@ void InterruptHandler()
     if (*devTable & EIGTH_BIT_ON)   devNumber = 0;
 
     // get address of device register [status,command,data1,data2]
-    void* deviceRegister = DEV_REG_TABLE + devNumber*WORDSIZE
+    void* deviceRegister = DEV_REG_TABLE + devNumber*WORDSIZE;
 
     // calculate index of device semaphore
     int devIndex = lineNumber * 16 + devNumber;
-    uint devSemAddress = &(devSem[devIndex])
+    uint devSemAddress = &(devSem[devIndex]);
 
     // copy status
     uint status = *(deviceRegister);
@@ -79,13 +80,13 @@ void InterruptHandler()
 
     // if IO, decrement softblocked
     --softBlockCount;
-    pcb_t* tempProc = removeBlocked(devAddress);
+    pcb_t* tempProc = removeBlocked((int*)devSemAddress);
 
     // put status in pcb gotten
-    tempProc->a2 = status;
+    tempProc->p_s.a2 = status;
 
     // put pcb on readyQ
-    insertProcQ(tempProc,readyQ);
+    insertProcQ(&readyQ,tempProc);
 
-    LDST(INTOLD);
+    LDST(old);
 }

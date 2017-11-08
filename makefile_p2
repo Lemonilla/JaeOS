@@ -2,7 +2,7 @@
 
 SUPDIR = /usr/include/uarm
 
-DEFS = h/const.h h/types.h e/pcb.e e/asl.e e/initial.e e/interrupt.e e/scheduler.e e/exceptions.e $(SUPDIR)/libuarm.h Makefile
+DEFS = ../h/const.h ../h/types.h ../e/pcb.e ../e/asl.e ../e/initial.e ../e/interrupts.e ../e/scheduler.e ../e/exceptions.e $(SUPDIR)/libuarm.h Makefile
 
 CFLAGS =  -mcpu=arm7tdmi -c
 LDCOREFLAGS =  -T $(SUPDIR)/ldscripts/elf32ltsarm.h.uarmcore.x
@@ -22,8 +22,8 @@ p2test.o: phase2/p2test.c $(DEFS)
 initial.o: phase2/initial.c $(DEFS)
 	$(CC) $(CFLAGS) phase2/initial.c
 
-interrupts.o: phase2/interrupt.c $(DEFS)
-	$(CC) $(CFLAGS) phase2/interrupt.c
+interrupts.o: phase2/interrupts.c $(DEFS)
+	$(CC) $(CFLAGS) phase2/interrupts.c
  
 scheduler.o: phase2/scheduler.c $(DEFS)
 	$(CC) $(CFLAGS) phase2/scheduler.c

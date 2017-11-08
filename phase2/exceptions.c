@@ -43,6 +43,7 @@ HIDDEN void killGeneration(pcb_t* p)
 
 void programTrapHandler()
 {
+debug(0x11,0,0,0);
     // increment pc
     currentProc->p_s.pc += WORDSIZE;
 
@@ -63,6 +64,8 @@ void programTrapHandler()
 
 void TLBExceptionHandler()
 {
+    debug(0x12,0,0,0);
+
     // increment pc
     currentProc->p_s.pc += WORDSIZE;
 
@@ -87,6 +90,8 @@ sysCall()
     currentProc->p_s.pc += WORDSIZE;
     
     state_t* currentState = (state_t*) SYSOLD;
+
+debug(0x13,currentState->a1,0,0);
 
     // if in kernal mode
     if (currentState->cpsr & SYS_MODE == SYS_MODE)
@@ -135,6 +140,7 @@ sysCall()
 
 void sys1() // Babies
 {
+debug(0x13,0xFF,1,0);
     // make new proc
     pcb_t* p = allocPcb();
 
@@ -152,11 +158,12 @@ void sys1() // Babies
     }
 
     // resume execution
-    LDST(currentProc->p_s);
+    LDST(&(currentProc->p_s));
 }
 
 void sys2() // GLASS 'EM
 {
+debug(0x13,0xFF,2,0);
     // kill a proc & all it's children
     pcb_t* p = currentProc;
     if (p->p_child != NULL) 
@@ -172,32 +179,61 @@ void sys2() // GLASS 'EM
 
 void sys3() // signal
 {
-    state_t* s = (state_t*) SYSOLD;
+    debug(0x13,0xFF,3,0);
+    copyState(&(currentProc->p_s),SYSOLD);
+    uint semAdd = currentProc->p_s.a2;
+    if (*semAdd < 0)
+    {
+        pcb_t* rem = removeBlocked(semAdd);
+        insertProcQ(&readyQ, rem);
+    }
+    (*semAdd)++;
+    LDST(&(currentProc->p_s));
 
-    // signal on sem s
-    // p = removeBlocked()
-    pcb_t* p = removeBlocked(s->a2);
+//     state_t* s = (state_t*) SYSOLD;
+// debug(0x13,0xFF,3,s->a2);
+//     // signal on sem s
+//     // p = removeBlocked()
+//     pcb_t* p = removeBlocked(s->a2);
+//     softBlockCount--;
+//     if (softBlockCount < 0) softBlockCount = 0;
+//     insertProcQ(&readyQ,p);
 
-    insertProcQ(p,readyQ);
-
-    // resume execution
-    LDST(s);
+//     // resume execution
+//     LDST(s);
 }
 
 void sys4() // wait
 {
-    // update currentProc cpu time
-    currentProc->p_cpuTime += TODCLOCK() - currentProc->p_startTime;
+    debug(0x13,0xFF,4,0);
 
-    // insert into ASL
-    insertBlocked(currentProc, currentProc->p_s.a2);
+    copyState(&(currentProc->p_s),SYSOLD);
+    uint semAdd = currentProc->p_s.a2;
 
-    // move onto next thing
-    scheduler();
+    if (*semAdd > -1)
+    {
+        currentProc->p_cpuTime += getTimeRunning();
+        insertBlocked(currentProc, semAdd);
+        scheduler();
+    }
+
+    LDST(&(currentProc->p_s));
+
+    // // update currentProc cpu time
+    // currentProc->p_cpuTime += getTimeRunning();
+
+    // // insert into ASL
+    // insertBlocked(currentProc, currentProc->p_s.a2);
+
+    // softBlockCount++;
+
+    // // move onto next thing
+    // scheduler();
 }
 
 void sys5() // set custom handler
 {
+    debug(0x13,0xFF,5,0);
     // update currentProc state
     copyState(&(currentProc->p_s),SYSOLD);
 
@@ -222,27 +258,30 @@ void sys5() // set custom handler
     currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] = new;
 
     // reload state and continue execution
-    LDST(currentProc->p_s);
+    LDST(&(currentProc->p_s));
 }
 
 int sys6() // get CPU time
 {
+    debug(0x13,0xFF,6,0);
     // update currentProc state
     copyState(&(currentProc->p_s),SYSOLD);
 
     // update time
-    currentProc->p_cpuTime += TODCLOCK() - currentProc->p_startTime;
-    currentProc->p_startTime = TODCLOCK();
+    currentProc->p_cpuTime += getTimeRunning();
+    startTime_Hi = getTODHI();
+    startTime_Lo = getTODLO();
 
     // set oldSys's A1 to cpu time
     currentProc->p_s.a1 = currentProc->p_cpuTime;
 
     // load oldSys
-    LDST(currentProc->p_s);
+    LDST(&(currentProc->p_s));
 }
 
 void sys7() // wait 100 ms
 {
+    debug(0x13,0xFF,7,0);
     // update currentProc state
     copyState(&(currentProc->p_s),SYSOLD);
     
@@ -254,12 +293,14 @@ void sys7() // wait 100 ms
 
 void sys8() // wait for I/O
 {
+    debug(0x13,0xFF,8,0);
     // update currentProc state
     copyState(&(currentProc->p_s),SYSOLD);
 
     // timing stuff
-    currentProc->p_cpuTime += TODCLOCK() - currentProc->p_startTime;
-    currentProc->p_startTime = TODCLOCK();
+    currentProc->p_cpuTime += getTimeRunning();
+    startTime_Hi = getTODHI();
+    startTime_Lo = getTODLO();
 
     // softblocked += 1
     softBlockCount++;

@@ -40,7 +40,7 @@ typedef struct pcb_t {
                                 /* which proc is blocked */
     uint           p_cpuTime;   /* time on cpu.          */
                                 /* uint > int in size.   */
-    int            p_startTime;
+    
                                 /* 0: PGM_OLD */
                                 /* 1: TLB_OLD */
                                 /* 2: SYS_OLD */

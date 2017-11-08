@@ -14,7 +14,18 @@
  */
 
 
+
+
 // START EDIT
+
+void debug_test(int a, int b, int c, int d)
+{
+	int i = 42l;
+	i++;
+}
+
+
+
 #define PROGTRAP 	1
 #define TLBTRAP		0
 #define SYSTRAP		2
@@ -29,6 +40,10 @@
 #include "../h/types.h"
 #include "/usr/include/uarm/libuarm.h"
 
+#include "../e/scheduler.e"
+#include "../e/initial.e"
+#include "../e/interrupt.e"
+#include "../e/exceptions.e"
 
 typedef unsigned int devregtr;
 
@@ -139,6 +154,7 @@ void print(char *msg) {
 	
 	SYSCALL(PASSERN, (int)&term_mut, 0, 0);				/* P(term_mut) */
 	while (*s != EOS) {
+		debug(0xFF,1,1,0);
 		base->transm_command = PRINTCHR | (((unsigned int) *s) << BYTELEN);
 		status = SYSCALL(WAITIO, IL_TERMINAL, 0, 0);	
 		if ((status & TERMSTATMASK) != RECVD)
@@ -153,10 +169,12 @@ void print(char *msg) {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {	
-	
-	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
+	debug(0xFF,0,0,0);
 
+	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
+debug(0xFF,1,0,0);
 	print("p1 v(testsem)\n");
+debug(0xFF,2,0,0);
 
 	/* set up states of the other processes */
 

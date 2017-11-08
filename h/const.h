@@ -26,8 +26,13 @@
 #define ALLOFF                      0x00000000
 #define SYS_MODE                    0x0000001F
 #define USR_MODE                    0x00000010
-#define INT_DISABLED                0x000000C0 // | with w/e to turn them off
-#define INT_ENABLED                 0xFFFFFF3F // & with w/e to turn them on
+//#define INT_DISABLED                0x000000C0 // | with w/e to turn them off
+//#define INT_ENABLED                 0xFFFFFF3F // & with w/e to turn them on
+#define INT_ENABLED                 0x000000C0 // | with w/e to turn them off
+#define INT_DISABLED                0x00000000 // & with w/e to turn them on
+
+
+
 
 #define INTNEW                      0x00007058
 #define INTOLD                      0x00007000
@@ -80,11 +85,11 @@
 
 
 // DEVICE REGISTER COMMANDS
-#define RESET                       0
-#define ACK                         1
-#define SEEKCYL                     2
-#define READBLK                     3
-#define WRITEBLK                    4
+#define CMD_RESET                   0
+#define CMD_ACK                     1
+#define CMD_SEEKCYL                 2
+#define CMD_READBLK                 3
+#define CMD_WRITEBLK                4
 
 #endif
 

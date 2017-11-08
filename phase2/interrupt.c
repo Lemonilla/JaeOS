@@ -11,7 +11,9 @@
 
 extern void interruptHandler()
 {
-    if (currentProc == NULL) scheduler();
+    debug(0x17,0,0,0);
+
+    //if (currentProc == NULL) scheduler();
 
     // figure out highest priority device alert
     uint lineNumber;
@@ -27,22 +29,24 @@ extern void interruptHandler()
     if (old->CP15_Cause & SEVENTH_BIT_ON) lineNumber = 1;
     if (old->CP15_Cause & EIGTH_BIT_ON)   lineNumber = 0;
 
+debug(0x17,1,lineNumber,0);
+
     // if end of quantum
     if (lineNumber == 2){
             //turn off alarm (optional)
             //Done by setting new value in timer
-
+        debug(0x17,2,0x0,0);
             //copy oldInt into currentProc->p_state
             copyState(&(currentProc->p_s), INTOLD);
-
+        debug(0x17,2,1,0);
             //increment currentProc cpu time
-            int currentTod = TODCLOCK();
-            int tempTime = currentTod - currentProc->p_startTime;
-            currentProc->p_cpuTime = tempTime;
-
+            currentProc->p_cpuTime += getTimeRunning();
+            startTime_Hi = getTODHI();
+            startTime_Lo = getTODLO();
+        debug(0x17,2,3,0);
             //put currentProc on readyQ
-            insertProcQ(currentProc, readyQ);
-
+            insertProcQ(&readyQ, currentProc);
+        debug(0x17,2,0xFF,0);
             //call the scheduler
             scheduler();
     }
@@ -76,8 +80,8 @@ extern void interruptHandler()
     uint status = deviceReg->status;
 
     // set command to acknowledged
-    deviceReg->command = ACK;
-
+    deviceReg->command = CMD_ACK;
+   debug(0x17,2,0,devSemAddress);
     // if IO, decrement softblocked
     --softBlockCount;
     pcb_t* tempProc = removeBlocked((int*)devSemAddress);

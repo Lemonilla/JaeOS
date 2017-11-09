@@ -1,0 +1,3 @@
+Mount drive with:
+
+sudo mount -t vboxsf C_DRIVE ~/C_DRIVE

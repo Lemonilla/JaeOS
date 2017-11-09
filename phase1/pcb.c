@@ -78,6 +78,7 @@ void freePcb (pcb_t* p)
  ****/
 pcb_t* allocPcb ()
 {
+    int blank[22];
     // If the freelist is empty return NULL
     if (emptyProcQ(freeList)) return NULL;
 
@@ -92,6 +93,29 @@ pcb_t* allocPcb ()
     tmp->p_child = NULL;
     tmp->p_sib = NULL;
     tmp->p_semAdd = NULL;
+    tmp->p_s.a1 = NULL;
+    tmp->p_s.a2 = NULL;
+    tmp->p_s.a3 = NULL;
+    tmp->p_s.a4 = NULL;
+    tmp->p_s.v1 = NULL;
+    tmp->p_s.v2 = NULL;
+    tmp->p_s.v3 = NULL;
+    tmp->p_s.v4 = NULL;
+    tmp->p_s.v5 = NULL;
+    tmp->p_s.v6 = NULL;
+    tmp->p_s.sl = NULL;
+    tmp->p_s.fp = NULL;
+    tmp->p_s.ip = NULL;
+    tmp->p_s.sp = NULL;
+    tmp->p_s.lr = NULL;
+    tmp->p_s.pc = NULL;
+    tmp->p_s.cpsr = NULL;
+    tmp->p_s.CP15_Control = NULL;
+    tmp->p_s.CP15_EntryHi = NULL;
+    tmp->p_s.CP15_Cause = NULL;
+    tmp->p_s.TOD_Hi = NULL;
+    tmp->p_s.TOD_Low = NULL;
+
 
     // Return the node off the Free List
     return tmp;

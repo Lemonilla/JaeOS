@@ -49,7 +49,7 @@ int getTimeRunning()
 
 void copyState(state_t* copy, state_t* initial)
 {
-    debug(0x20,0,0,0);
+    
     copy->a1 = initial->a1;
     copy->a2 = initial->a2;
     copy->a3 = initial->a3;
@@ -58,36 +58,20 @@ void copyState(state_t* copy, state_t* initial)
     copy->v2 = initial->v2;
     copy->v3 = initial->v3;
     copy->v4 = initial->v4;
-    debug(0x20,8,0,0);
-    // we get TLB from this?
     copy->v5 = initial->v5;
-    debug(0x20,9,0,0);
     copy->v6 = initial->v6;
-    debug(0x20,0x10,0,0);
-   // copy->sl = initial->sl;
-    debug(0x20,0x11,0,0);
+    copy->sl = initial->sl;
     copy->fp = initial->fp;
-    debug(0x20,0x12,0,0);
     copy->ip = initial->ip;
-    debug(0x20,0x13,0,0);
     copy->sp = initial->sp;
-    debug(0x20,0x14,0,0);
     copy->lr = initial->lr;
-    debug(0x20,0x15,0,0);
     copy->pc = initial->pc;
-    debug(0x20,0x16,0,0);
     copy->cpsr = initial->cpsr;
-    debug(0x20,0x17,0,0);
     copy->CP15_Control = initial->CP15_Control;
-    debug(0x20,0x18,0,0);
     copy->CP15_EntryHi = initial->CP15_EntryHi;
-    debug(0x20,0x19,0,0);
     copy->CP15_Cause = initial->CP15_Cause;
-    debug(0x20,0x20,0,0);
     copy->TOD_Hi = initial->TOD_Hi;
-    debug(0x20,0x21,0,0);
     copy->TOD_Low = initial->TOD_Low; 
-    debug(0x20,0xFF,0,0);   
 }
 
 

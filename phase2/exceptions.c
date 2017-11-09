@@ -181,26 +181,17 @@ void sys3() // signal
 {
     debug(0x13,0xFF,3,0);
     copyState(&(currentProc->p_s),SYSOLD);
-    uint semAdd = currentProc->p_s.a2;
-    if (*semAdd < 0)
+
+    int* semAdd = currentProc->p_s.a2;
+
+    (*semAdd)++;
+    if (*semAdd <= 0)
     {
         pcb_t* rem = removeBlocked(semAdd);
+        rem->p_semAdd = NULL;
         insertProcQ(&readyQ, rem);
     }
-    (*semAdd)++;
     LDST(&(currentProc->p_s));
-
-//     state_t* s = (state_t*) SYSOLD;
-// debug(0x13,0xFF,3,s->a2);
-//     // signal on sem s
-//     // p = removeBlocked()
-//     pcb_t* p = removeBlocked(s->a2);
-//     softBlockCount--;
-//     if (softBlockCount < 0) softBlockCount = 0;
-//     insertProcQ(&readyQ,p);
-
-//     // resume execution
-//     LDST(s);
 }
 
 void sys4() // wait
@@ -208,27 +199,19 @@ void sys4() // wait
     debug(0x13,0xFF,4,0);
 
     copyState(&(currentProc->p_s),SYSOLD);
-    uint semAdd = currentProc->p_s.a2;
+    int* semAdd = currentProc->p_s.a2;
 
-    if (*semAdd > -1)
+    (*semAdd)--;
+    if (*semAdd > 0)
     {
         currentProc->p_cpuTime += getTimeRunning();
-        insertBlocked(currentProc, semAdd);
+        startTime_Hi = getTODHI();
+        startTime_Lo = getTODLO();
+        insertBlocked(semAdd,currentProc);
         scheduler();
     }
 
     LDST(&(currentProc->p_s));
-
-    // // update currentProc cpu time
-    // currentProc->p_cpuTime += getTimeRunning();
-
-    // // insert into ASL
-    // insertBlocked(currentProc, currentProc->p_s.a2);
-
-    // softBlockCount++;
-
-    // // move onto next thing
-    // scheduler();
 }
 
 void sys5() // set custom handler

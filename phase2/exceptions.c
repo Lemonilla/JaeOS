@@ -280,20 +280,26 @@ void sys8() // wait for I/O
     // update currentProc state
     copyState(&(currentProc->p_s),SYSOLD);
 
-    // timing stuff
-    currentProc->p_cpuTime += getTimeRunning();
-    startTime_Hi = getTODHI();
-    startTime_Lo = getTODLO();
-
-    // softblocked += 1
-    softBlockCount++;
-
     // index of device semaphore is Line# * 16 + Device#
     int lineNum = currentProc->p_s.a2;
     int devNum = currentProc->p_s.a3;
     int semIndex = lineNum*16 + devNum;
-    int semAdd = &devSem[semIndex];
-    // call sys 4 on IO's semaphore
-    currentProc->p_s.a2 = semAdd;
-    sys4();
+    int* semAdd = &devSem[semIndex]; 
+    // WE NEED TO EDIT semAdd IF IT'S A TERMINAL I/O REQUEST
+
+    // wait on i/o semaphore
+    (*semAdd)--;
+    if (*semAdd > 0)
+    {
+        currentProc->p_cpuTime += getTimeRunning();
+        startTime_Hi = getTODHI();
+        startTime_Lo = getTODLO();
+
+        softBlockCount++;
+        insertBlocked(semAdd,currentProc);
+        scheduler();
+    }
+
+    // I feel like we do something here but idk what (?)
+    LDST(&(currentProc->p_s));
 }

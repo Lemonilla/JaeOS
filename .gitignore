@@ -3,6 +3,7 @@ make
 *.zip
 *.core.uarm
 *.uarm
+$JakeCode/
 
 
 # Object files

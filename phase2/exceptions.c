@@ -41,7 +41,7 @@ HIDDEN void killGeneration(pcb_t* p)
     }
 }
 
-void programTrapHandler()
+void pgmHandle()
 {
 debug(0x11,0,0,0);
     // increment pc
@@ -62,7 +62,7 @@ debug(0x11,0,0,0);
     LDST(currentProc->p_handlers[CUSTOM_PGM_NEW]);  
 }
 
-void TLBExceptionHandler()
+void tlbHandle()
 {
     debug(0x12,0,0,0);
 
@@ -84,7 +84,7 @@ void TLBExceptionHandler()
     LDST(currentProc->p_handlers[CUSTOM_TLB_NEW]);  
 }
 
-sysCall()
+sysHandle()
 {
     // increment pc
     currentProc->p_s.pc += WORDSIZE;

@@ -30,15 +30,21 @@ void debug_test(int a, int b, int c, int d)
 #define TLBTRAP		0
 #define SYSTRAP		2
 
-#include "/usr/include/uarm/arch.h"
-#include "/usr/include/uarm/uARMconst.h"
+#include "../h/const.h"
+#include "../h/types.h"
+#include "../e/initial.e"
+#include "../e/exceptions.e"
+#include "../e/interrupt.e"
+
 // END EDIT
 
 
-
-#include "../h/const.h"
-#include "../h/types.h"
 #include "/usr/include/uarm/libuarm.h"
+#include "/usr/include/uarm/uARMtypes.h"
+#include "/usr/include/uarm/arch.h"
+#include "/usr/include/uarm/uARMconst.h"
+#define ALLOFF	0
+#define NUMOFDEVICELINES 8
 
 #include "../e/scheduler.e"
 #include "../e/initial.e"
@@ -156,9 +162,12 @@ void print(char *msg) {
 	while (*s != EOS) {
 		debug(0xFF,1,1,0);
 		base->transm_command = PRINTCHR | (((unsigned int) *s) << BYTELEN);
+		debug(0xFF,0xFF,sysHandle,((state_t*) SYSNEW)->pc);
 		status = SYSCALL(WAITIO, IL_TERMINAL, 0, 0);	
+		debug(0xFF,1,1,2);
 		if ((status & TERMSTATMASK) != RECVD)
 			PANIC();
+		debug(0xFF,1,1,3);
 		s++;	
 	}
 	SYSCALL(VERHOGEN, (int)&term_mut, 0, 0);				/* V(term_mut) */
@@ -656,5 +665,3 @@ void p8leaf() {
 
 	SYSCALL(PASSERN, (int)&blkp8, 0, 0);
 }
-
-

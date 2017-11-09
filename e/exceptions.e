@@ -1,9 +1,9 @@
 #ifndef EXCEPTIONS
 #define EXCEPTIONS
 
-extern void programTrapHandler();
-extern void TLBExceptionHandler();
-extern void sysCall();
+extern void pgmHandle();
+extern void tlbHandle();
+extern void sysHandle();
 extern void sys1();
 extern void sys2();
 extern void sys3();

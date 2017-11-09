@@ -9,7 +9,7 @@
 #include "../e/exceptions.e"
 #include "../e/scheduler.e"
 
-extern void interruptHandler()
+extern void intHandle()
 {
     debug(0x17,0,0,0);
 

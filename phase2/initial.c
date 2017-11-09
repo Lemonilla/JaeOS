@@ -96,22 +96,22 @@ void main()
 
     // initialize the exception handler table
     state_t* intNew = (state_t *) INTNEW;
-    intNew->pc = (uint) interruptHandler;
+    intNew->pc = (uint) intHandle;
     intNew->sp = RAM_TOP;
     intNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
 
     state_t* tlbNew = (state_t *) TLBNEW;
-    tlbNew->pc = (uint) TLBExceptionHandler;
+    tlbNew->pc = (uint) tlbHandle;
     tlbNew->sp = RAM_TOP;
     tlbNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
 
     state_t* pgmtNew = (state_t *) PGMTNEW;
-    pgmtNew->pc = (uint) programTrapHandler;
+    pgmtNew->pc = (uint) pgmHandle;
     pgmtNew->sp = RAM_TOP;
     pgmtNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
 
     state_t* sysNew = (state_t *) SYSNEW;
-    sysNew->pc = (uint) sysCall;
+    sysNew->pc = (uint) sysHandle;
     sysNew->sp = RAM_TOP;
     sysNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
 

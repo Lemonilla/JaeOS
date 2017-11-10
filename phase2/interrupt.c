@@ -19,15 +19,18 @@ void intHandle()
     state_t* old = (state_t*) INTOLD;
 
     // figure out highest priority device alert
-    uint lineNumber;
-    if (old->CP15_Cause & FIRST_BIT_ON)   lineNumber = 7;
-    if (old->CP15_Cause & SECOND_BIT_ON)  lineNumber = 6;
-    if (old->CP15_Cause & THIRD_BIT_ON)   lineNumber = 5;
-    if (old->CP15_Cause & FOURTH_BIT_ON)  lineNumber = 4;
-    if (old->CP15_Cause & FIFTH_BIT_ON)   lineNumber = 3;
-    if (old->CP15_Cause & SIXTH_BIT_ON)   lineNumber = 2;
-    if (old->CP15_Cause & SEVENTH_BIT_ON) lineNumber = 1;
-    if (old->CP15_Cause & EIGTH_BIT_ON)   lineNumber = 0;
+    uint lineNumber = NULL;
+    uint mask = 0x80000000;
+    int line = 7;
+    while (line > -1)
+    {
+        if (old->CP15_Cause & mask) lineNumber = line;
+        --line;
+        mask >> 1;
+    }  
+
+    // if nothing is interrupting, panic
+    if (lineNumber == NULL) PANIC();
 
     // if end of quantum
     if (lineNumber == CLOCK_LINE)
@@ -53,14 +56,14 @@ void intHandle()
 
     // get device number of highest priority
     int devNumber = NULL;
-    if (devTable->lines[lineNumber] & FIRST_BIT_ON)   devNumber = 7;
-    if (devTable->lines[lineNumber] & SECOND_BIT_ON)  devNumber = 6;
-    if (devTable->lines[lineNumber] & THIRD_BIT_ON)   devNumber = 5;
-    if (devTable->lines[lineNumber] & FOURTH_BIT_ON)  devNumber = 4;
-    if (devTable->lines[lineNumber] & FIFTH_BIT_ON)   devNumber = 3;
-    if (devTable->lines[lineNumber] & SIXTH_BIT_ON)   devNumber = 2;
-    if (devTable->lines[lineNumber] & SEVENTH_BIT_ON) devNumber = 1;
-    if (devTable->lines[lineNumber] & EIGTH_BIT_ON)   devNumber = 0;
+    mask = 0x80000000;
+    line = 7;
+    while (line > -1)
+    {
+        if (devTable->lines[lineNumber] & mask) devNumber = line;
+        --line;
+        mask >> 1;
+    }
 
     // if no device is interrupting, panic
     if (devNumber == NULL) PANIC();

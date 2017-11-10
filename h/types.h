@@ -11,6 +11,7 @@
 #include "/usr/include/uarm/uARMtypes.h"
 
 typedef unsigned int uint;
+typedef int bool;
 
 typedef struct {
     uint status;

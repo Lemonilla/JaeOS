@@ -11,9 +11,7 @@
 
 void scheduler()
 {
-debug(3,0,0,0);
-    // we're done with our timeslice, get back in line
-   // insertProcQ(&readyQ, currentProc);
+    debug(3,0,0,0);
 
     // get next in line
     pcb_t* next = removeProcQ(&readyQ);
@@ -24,7 +22,6 @@ debug(3,0,0,0);
         // check if processCount = 0
         if (processCount == 0) 
         {
-            debug(3,1,0,0);
             HALT();
         }
 
@@ -34,11 +31,9 @@ debug(3,0,0,0);
         {
             debug(3,2,0,0);
             currentProc = NULL;
-            // TURN ON INTERRUPTS!
-            debug(0x3,2,getSTATUS() & 0xFFFFFF3F,0);
 
+            // TURN ON INTERRUPTS!
             setSTATUS(getSTATUS() & 0xFFFFFF3F);
-            debug(0x3,2,getSTATUS(),0);
             WAIT();
         } 
         debug(3,3,0,0);

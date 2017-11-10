@@ -24,12 +24,19 @@ int processCount = 0;
 int softBlockCount = 0;
 pcb_t* readyQ;
 pcb_t* currentProc = NULL;
-int startTime_Hi, startTime_Lo;
+uint startTime_Hi, startTime_Lo;
 
 // init device semaphors
 // index of device semaphore is Line# * 16 + Device#
 int devSem[16*NUMOFDEVICELINES];
+int devStat[16*NUMOFDEVICELINES];
 
+void updateTime()
+{
+    currentProc->p_cpuTime += getTimeRunning();
+    startTime_Hi = getTODHI();
+    startTime_Lo = getTODLO();
+}
 
 int getTimeRunning()
 {
@@ -81,6 +88,7 @@ void main()
     for (int i = 0; i < 16*NUMOFDEVICELINES; i++) 
     {
         devSem[i] = 0;
+        devStat[i] = NULL;
     }
 
     // init timing values
@@ -114,6 +122,8 @@ void main()
     sysNew->pc = (uint) sysHandle;
     sysNew->sp = RAM_TOP;
     sysNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
+
+    debug(((state_t*) SYSNEW)->pc,0,0,0);
 
     // initialize first process
     pcb_t* firstProc = allocPcb();

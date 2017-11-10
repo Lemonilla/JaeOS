@@ -1,4 +1,4 @@
-/******************************TYPES.H*******************************
+/******************************CONST.H*******************************
  * Written by Neal Troscinski, and Timothy Wright
  *
  * This header file contains utility constants & macro definitions.
@@ -12,7 +12,6 @@
 #include "/usr/include/uarm/uARMconst.h"
 
 #define MAXPROC                     20
-#define NUMOFDEVICELINES            8
 #define MAXINT                      0xFFFFFFFF
 #define HIDDEN                      static
 #define TRUE                        1
@@ -26,14 +25,10 @@
 #define ALLOFF                      0x00000000
 #define SYS_MODE                    0x0000001F
 #define USR_MODE                    0x00000010
-//#define INT_DISABLED                0x000000C0 // | with w/e to turn them off
-//#define INT_ENABLED                 0xFFFFFF3F // & with w/e to turn them on
 #define INT_ENABLED                 0x000000C0 // | with w/e to turn them off
 #define INT_DISABLED                0x00000000 // & with w/e to turn them on
 
-
-
-
+// Exception Vector
 #define INTNEW                      0x00007058
 #define INTOLD                      0x00007000
 #define TLBNEW                      0x00007108
@@ -43,6 +38,7 @@
 #define SYSNEW                      0x00007268
 #define SYSOLD                      0x00007210
 
+// custom handler indexes
 #define CUSTOM_HANDLER_NEW_OFFSET   3
 #define CUSTOM_PGM_OLD              0
 #define CUSTOM_TLB_OLD              1
@@ -51,7 +47,6 @@
 #define CUSTOM_TLB_NEW              4
 #define CUSTOM_SYS_NEW              5
 
-#define PSUDOTIMER_SEM_INDEX        2 * 16 + 0 // Line 2 Device 0
 
 #define MEMEORY_ERROR_CODE          1   // Memory Error
 #define BUS_ERROR_CODE              2   // Bus Error on Load/Store
@@ -83,6 +78,16 @@
 #define DEV_FLAG_PTR                0x00006fe0
 #define DEV_REG_TABLE               0x000002d8
 
+// Device lines for interrupts
+#define NUMOFDEVICELINES            8
+#define CLOCK_LINE                  2
+#define DISK_LINE                   3
+#define TAPE_LINE                   4
+#define NETWORK_LINE                5
+#define PRINTER_LINE                6
+#define TERMINAL_LINE               7
+
+#define PSUDOTIMER_SEM_INDEX        2 * 16 + 0 // Line 2 Device 0
 
 // DEVICE REGISTER COMMANDS
 #define CMD_RESET                   0

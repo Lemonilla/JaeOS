@@ -204,9 +204,7 @@ void sys4() // wait
     (*semAdd)--;
     if (*semAdd > 0)
     {
-        currentProc->p_cpuTime += getTimeRunning();
-        startTime_Hi = getTODHI();
-        startTime_Lo = getTODLO();
+        updateTime();
         insertBlocked(semAdd,currentProc);
         scheduler();
     }
@@ -251,9 +249,7 @@ int sys6() // get CPU time
     copyState(&(currentProc->p_s),SYSOLD);
 
     // update time
-    currentProc->p_cpuTime += getTimeRunning();
-    startTime_Hi = getTODHI();
-    startTime_Lo = getTODLO();
+    updateTime();
 
     // set oldSys's A1 to cpu time
     currentProc->p_s.a1 = currentProc->p_cpuTime;
@@ -283,23 +279,20 @@ void sys8() // wait for I/O
     // index of device semaphore is Line# * 16 + Device#
     int lineNum = currentProc->p_s.a2;
     int devNum = currentProc->p_s.a3;
-    int semIndex = lineNum*16 + devNum;
-    int* semAdd = &devSem[semIndex]; 
-    // WE NEED TO EDIT semAdd IF IT'S A TERMINAL I/O REQUEST
+    bool readFromTerminal = currentProc->p_s.a4;
 
-    // wait on i/o semaphore
-    (*semAdd)--;
-    if (*semAdd > 0)
+    int index = lineNum*16 + devNum; 
+    if (lineNum == TERMINAL_LINE && readFromTerminal) index+=8; 
+
+    if (--devSem[index] > 0)
     {
-        currentProc->p_cpuTime += getTimeRunning();
-        startTime_Hi = getTODHI();
-        startTime_Lo = getTODLO();
-
         softBlockCount++;
-        insertBlocked(semAdd,currentProc);
+        insertBlocked(&(devSem[index]),currentProc);
+        currentProc = NULL;
         scheduler();
     }
-
-    // I feel like we do something here but idk what (?)
+    // we got the interrupt first
+    currentProc->p_s.a1 = devStat[index];
+    devStat[index] = NULL;
     LDST(&(currentProc->p_s));
 }

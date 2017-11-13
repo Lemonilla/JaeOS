@@ -10,9 +10,9 @@ extern pcb_t* currentProc;
 extern uint startTime_Hi;
 extern uint startTime_Lo;
 
-// index of device semaphore is (Line# - 1) * 16 + Device#
-extern int devSem[16*NUMOFDEVICELINES];
-extern int devStat[16*NUMOFDEVICELINES];
+// index of device semaphore is Line# * DEVICESPERLINE + Device#
+extern int devSem[DEVICESPERLINE*NUMOFDEVICELINES];
+extern int devStat[DEVICESPERLINE*NUMOFDEVICELINES];
 
 extern void copyState(state_t* copy, state_t* initial);
 extern void updateTime();

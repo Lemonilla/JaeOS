@@ -20,9 +20,9 @@ void intHandle()
 
     // figure out highest priority device alert
     uint lineNumber = NULL;
-    uint mask = 0x00000080;
+    uint mask = 0x80000000;
     int line = 7;
-    while (mask != 0)
+    while (mask > 0x01000000)
     {
         if (old->CP15_Cause & mask) lineNumber = line;
         --line;
@@ -35,6 +35,9 @@ void intHandle()
     // if end of quantum
     if (lineNumber == CLOCK_LINE)
     {
+        // ASSUME IT"S END OF QUANTOM
+
+
         // if there's no prog who's quantom to end, skip this shit
         if (currentProc == NULL) scheduler();
 
@@ -57,18 +60,18 @@ void intHandle()
     // get device number of highest priority
     int devNumber = NULL;
     mask = 0x00000080;
-    line = 7;
+    int dev = 7;
     while (mask != 0)
     {
-        if (devTable->lines[lineNumber] & mask) devNumber = line;
-        --line;
+        if (devTable->lines[lineNumber] & mask) devNumber = dev;
+        --dev;
         mask >> 1;
     }
 
     // if no device is interrupting, panic
     if (devNumber == NULL) PANIC();
 
-    // get device register (taken from book)
+    // get device register (taken from book pg 36)
     devregister_t* deviceReg = (devreg_t*) (DEV_REG_TABLE + (lineNumber-3)*0x80 + (devNumber * 0x10));
 
     // get device semaphore

@@ -11,10 +11,10 @@
 
 HIDDEN void passUpOrDie(int offset)
 {
-    if (currentProc->p_handlers[offset+CUSTOM_HANDLER_NEW_OFFSET] == NULL)
+    if (currentProc->p_handlers[offset] == NULL)
     {
         // if we haven't specified what to do here, GLASS 'EM
-        sys2();
+        glassThem(currentProc);
     }
     // they have a custom handler
     // pass off the problem to that
@@ -23,9 +23,9 @@ HIDDEN void passUpOrDie(int offset)
     uint toCopyFrom;
     switch(offset)
     {
-        case CUSTOM_PGM: toCopyFrom=PGMTOLD; break;
-        case CUSTOM_TLB: toCopyFrom=TLBOLD; break;
-        case CUSTOM_SYS: toCopyFrom=SYSOLD; break;
+        case CUSTOM_PGM: toCopyFrom = PGMTOLD; break;
+        case CUSTOM_TLB: toCopyFrom = TLBOLD; break;
+        case CUSTOM_SYS: toCopyFrom = SYSOLD; break;
     }
     currentProc->p_handlers[offset] = toCopyFrom;
 
@@ -33,7 +33,7 @@ HIDDEN void passUpOrDie(int offset)
     LDST(currentProc->p_handlers[offset+CUSTOM_HANDLER_NEW_OFFSET]); 
 }
 
-HIDDEN void killGeneration(pcb_t* p)
+void glassThem(pcb_t* p)
 {
     pcb_t* tmp;
     pcb_t* removedProc;
@@ -42,7 +42,7 @@ HIDDEN void killGeneration(pcb_t* p)
         // if we have a child, kill that generation
         if (!emptyChild(p))
         {
-            killGeneration(removeChild(p));
+            glassThem(removeChild(p));
         }
 
         // it's just 
@@ -92,7 +92,7 @@ void tlbHandle()
     passUpOrDie(CUSTOM_TLB);
 }
 
-sysHandle()
+void sysHandle()
 {    
     // update currentProc state
     copyState(&(currentProc->p_s),(state_t*) SYSOLD);
@@ -143,9 +143,6 @@ debug(0x13,0xFF,1,0);
     // make new proc
     pcb_t* p = allocPcb();
 
-    // update currentProc's state
-    copyState(&(currentProc->p_s),SYSOLD);
-
     // default we can't make a child ;_;
     currentProc->p_s.a1 = -1; // return error code
 
@@ -164,14 +161,8 @@ void sys2() // GLASS 'EM
 {
 debug(0x13,0xFF,2,0);
     // kill a proc & all it's children
-    pcb_t* p = currentProc;
-    if (p->p_child != NULL) 
-    {
-        killGeneration(p->p_child);
-    }
-    // p can't be in a queue since it's currentProc
-    // so we can just kill it
-    freePcb(p);
+
+    glassThem(currentProc);
     
     scheduler();
 }
@@ -179,8 +170,6 @@ debug(0x13,0xFF,2,0);
 void sys3() // signal
 {
     debug(0x13,0xFF,3,0);
-    copyState(&(currentProc->p_s),SYSOLD);
-
     int* semAdd = currentProc->p_s.a2;
 
     (*semAdd)++;
@@ -196,8 +185,6 @@ void sys3() // signal
 void sys4() // wait
 {
     debug(0x13,0xFF,4,0);
-
-    copyState(&(currentProc->p_s),SYSOLD);
     int* semAdd = currentProc->p_s.a2;
 
     (*semAdd)--;
@@ -214,8 +201,6 @@ void sys4() // wait
 void sys5() // set custom handler
 {
     debug(0x13,0xFF,5,0);
-    // update currentProc state
-    copyState(&(currentProc->p_s),SYSOLD);
 
     /* 0: PGM_OLD */
     /* 1: TLB_OLD */
@@ -244,8 +229,6 @@ void sys5() // set custom handler
 int sys6() // get CPU time
 {
     debug(0x13,0xFF,6,0);
-    // update currentProc state
-    copyState(&(currentProc->p_s),SYSOLD);
 
     // update time
     updateTime();
@@ -260,9 +243,10 @@ int sys6() // get CPU time
 void sys7() // wait 100 ms
 {
     debug(0x13,0xFF,7,0);
-    // update currentProc state
-    copyState(&(currentProc->p_s),SYSOLD);
     
+    // maybe increment softblocked?
+
+
     // time update handled in sys4
     // call sys 4 on psudo-timer for requesting process
     currentProc->p_s.a2 = devSem[PSUDOTIMER_SEM_INDEX];
@@ -272,8 +256,6 @@ void sys7() // wait 100 ms
 void sys8() // wait for I/O
 {
     debug(0x13,0xFF,8,0);
-    // update currentProc state
-    copyState(&(currentProc->p_s),SYSOLD);
 
     // index of device semaphore is Line# * 16 + Device#
     int lineNum = currentProc->p_s.a2;
@@ -283,7 +265,7 @@ void sys8() // wait for I/O
     int index = lineNum*16 + devNum; 
     if (lineNum == TERMINAL_LINE && readFromTerminal) index+=8; 
 
-    if (--devSem[index] > 0)
+    if (--devSem[index] < 0)
     {
         softBlockCount++;
         insertBlocked(&(devSem[index]),currentProc);

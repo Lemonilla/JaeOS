@@ -27,16 +27,10 @@ pcb_t* currentProc = NULL;
 uint startTime_Hi, startTime_Lo;
 
 // init device semaphors
-// index of device semaphore is Line# * 16 + Device#
+// index of device semaphore is Line# * DEVICESPERLINE + Device#
 int devSem[DEVICESPERLINE*NUMOFDEVICELINES];
 int devStat[DEVICESPERLINE*NUMOFDEVICELINES];
 
-void updateTime()
-{
-    currentProc->p_cpuTime += getTimeRunning();
-    startTime_Hi = getTODHI();
-    startTime_Lo = getTODLO();
-}
 
 int getTimeRunning()
 {
@@ -53,10 +47,18 @@ int getTimeRunning()
     return new_lo - old_lo;
 }
 
+void updateTime()
+{
+    currentProc->p_cpuTime += getTimeRunning();
+    startTime_Hi = getTODHI();
+    startTime_Lo = getTODLO();
+}
+
+
+
 
 void copyState(state_t* copy, state_t* initial)
 {
-    
     copy->a1 = initial->a1;
     copy->a2 = initial->a2;
     copy->a3 = initial->a3;
@@ -125,13 +127,11 @@ void main()
     sysNew->sp = RAM_TOP;
     sysNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
 
-    debug(((state_t*) SYSNEW)->pc,0,0,0);
-
     // initialize first process
     pcb_t* firstProc = allocPcb();
     firstProc->p_s.pc = (uint) test;
-    firstProc->p_s.sp = RAM_TOP - PAGESIZE;  // already set?
-    firstProc->p_s.cpsr = ALLOFF | SYS_MODE ;//| INT_ENABLED;
+    firstProc->p_s.sp = RAM_TOP - PAGESIZE;
+    firstProc->p_s.cpsr = ALLOFF | SYS_MODE | INT_ENABLED;
     insertProcQ(&readyQ,firstProc);
     processCount++;
 

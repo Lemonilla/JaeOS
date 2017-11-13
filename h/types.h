@@ -9,6 +9,7 @@
 #define TYPES
 
 #include "/usr/include/uarm/uARMtypes.h"
+#include "../h/const.h"
 
 typedef unsigned int uint;
 typedef int bool;
@@ -21,7 +22,7 @@ typedef struct {
 } devregister_t;          
 
 typedef struct {
-    long lines[8];
+    uint lines[8];
 } devflagtable_t;
 
 /* process table entry type */
@@ -40,8 +41,7 @@ typedef struct pcb_t {
     int            *p_semAdd;   /* ptr to semaphore on   */
                                 /* which proc is blocked */
     uint           p_cpuTime;   /* time on cpu.          */
-                                /* uint > int in size.   */
-    
+
                                 /* 0: PGM_OLD */
                                 /* 1: TLB_OLD */
                                 /* 2: SYS_OLD */
@@ -58,10 +58,5 @@ typedef struct semd_t {
     int             *s_semAdd;  /* pointer to the semaphore        */
     pcb_t           *s_tp;      /* tail pointer to a process queue */
 } semd_t;
-
-
-
-
-
 
 #endif

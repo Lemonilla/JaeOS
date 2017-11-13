@@ -28,8 +28,8 @@ uint startTime_Hi, startTime_Lo;
 
 // init device semaphors
 // index of device semaphore is Line# * 16 + Device#
-int devSem[16*NUMOFDEVICELINES];
-int devStat[16*NUMOFDEVICELINES];
+int devSem[DEVICESPERLINE*NUMOFDEVICELINES];
+int devStat[DEVICESPERLINE*NUMOFDEVICELINES];
 
 void updateTime()
 {
@@ -85,10 +85,12 @@ void copyState(state_t* copy, state_t* initial)
 void main()
 {
     // init semaphores
-    for (int i = 0; i < 16*NUMOFDEVICELINES; i++) 
+    int i = 0;
+    while (i < DEVICESPERLINE * NUMOFDEVICELINES)
     {
         devSem[i] = 0;
         devStat[i] = NULL;
+        i++;   
     }
 
     // init timing values
@@ -129,7 +131,7 @@ void main()
     pcb_t* firstProc = allocPcb();
     firstProc->p_s.pc = (uint) test;
     firstProc->p_s.sp = RAM_TOP - PAGESIZE;  // already set?
-    firstProc->p_s.cpsr = ALLOFF | SYS_MODE | INT_ENABLED;
+    firstProc->p_s.cpsr = ALLOFF | SYS_MODE ;//| INT_ENABLED;
     insertProcQ(&readyQ,firstProc);
     processCount++;
 

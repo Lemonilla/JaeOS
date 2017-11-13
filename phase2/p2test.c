@@ -162,7 +162,7 @@ void print(char *msg) {
 	while (*s != EOS) {
 		debug(0xFF,1,1,0);
 		base->transm_command = PRINTCHR | (((unsigned int) *s) << BYTELEN);
-		debug(0xFF,0xFF,sysHandle,((state_t*) SYSNEW)->pc);
+		debug(0xFF,0xFF,0xFF,0xFF);
 		status = SYSCALL(WAITIO, IL_TERMINAL, 0, 0);	
 		debug(0xFF,1,1,2);
 		if ((status & TERMSTATMASK) != RECVD)

@@ -9,6 +9,30 @@
 #include "../e/interrupt.e"
 #include "../e/scheduler.e"
 
+HIDDEN void passUpOrDie(int offset)
+{
+    if (currentProc->p_handlers[offset+CUSTOM_HANDLER_NEW_OFFSET] == NULL)
+    {
+        // if we haven't specified what to do here, GLASS 'EM
+        sys2();
+    }
+    // they have a custom handler
+    // pass off the problem to that
+
+    // copy state into old state
+    uint toCopyFrom;
+    switch(offset)
+    {
+        case CUSTOM_PGM: toCopyFrom=PGMTOLD; break;
+        case CUSTOM_TLB: toCopyFrom=TLBOLD; break;
+        case CUSTOM_SYS: toCopyFrom=SYSOLD; break;
+    }
+    currentProc->p_handlers[offset] = toCopyFrom;
+
+    // load new state
+    LDST(currentProc->p_handlers[offset+CUSTOM_HANDLER_NEW_OFFSET]); 
+}
+
 HIDDEN void killGeneration(pcb_t* p)
 {
     pcb_t* tmp;
@@ -16,86 +40,68 @@ HIDDEN void killGeneration(pcb_t* p)
     while(p != NULL)
     {
         // if we have a child, kill that generation
-        if (p->p_child != NULL)
+        if (!emptyChild(p))
         {
-            killGeneration(p->p_child);
+            killGeneration(removeChild(p));
         }
 
-        // get the next child in line
-        tmp = p->p_sib;
-
-        // remove from the lists we need to
-        removedProc = outProcQ(readyQ,p);
-        if (removedProc == NULL)
+        // it's just 
+        if (p == currentProc)
         {
-            // we're on the ASL
-            removedProc = outBlocked(p);
-            *(p->p_semAdd)--; // fix semaphore
+            currentProc = NULL;
+            outChild(p);
         }
+
+        // it's in readyQ
+        if (p->p_semAdd == NULL)
+        {
+            outProcQ(&readyQ,p);
+        }
+
+        // blocked on ASL
+        if (p->p_semAdd != NULL)
+        {
+            // we're softblocked
+            if (p->p_semAdd >= &devSem[0] && p->p_semAdd <= &devSem[DEVICESPERLINE*NUMOFDEVICELINES])
+            {
+                softBlockCount--;
+            }
+            else 
+            {
+                *(p->p_semAdd)++;
+            }
+            outBlocked(p);
+        }
+
+        processCount--;
 
         // Free it for use later
         freePcb(p);
-
-        // move to next one
-        p = tmp;
     }
 }
 
 void pgmHandle()
 {
-debug(0x11,0,0,0);
-    // increment pc
-    currentProc->p_s.pc += WORDSIZE;
-
-    if (currentProc->p_handlers[CUSTOM_PGM_NEW] == NULL)
-    {
-        // if we haven't specified what to do here, GLASS 'EM
-        sys2();
-    }
-    // they have a custom handler
-    // pass off the problem to that
-
-    // copy state into old state
-    currentProc->p_handlers[CUSTOM_PGM_OLD] = PGMTOLD;
-
-    // load new state
-    LDST(currentProc->p_handlers[CUSTOM_PGM_NEW]);  
+    debug(0x11,0,0,0);
+    passUpOrDie(CUSTOM_PGM);
 }
 
 void tlbHandle()
 {
     debug(0x12,0,0,0);
-
-    // increment pc
-    currentProc->p_s.pc += WORDSIZE;
-
-    if (currentProc->p_handlers[CUSTOM_TLB_NEW] == NULL)
-    {
-        // if we haven't specified what to do here, GLASS 'EM
-        sys2();
-    }
-    // they have a custom handler
-    // pass off the problem to that
-
-    // copy state into old state
-    currentProc->p_handlers[CUSTOM_TLB_OLD] = TLBOLD;
-
-    // load new state
-    LDST(currentProc->p_handlers[CUSTOM_TLB_NEW]);  
+    passUpOrDie(CUSTOM_TLB);
 }
 
 sysHandle()
-{
-    // increment pc
-    currentProc->p_s.pc += WORDSIZE;
-    
-    state_t* currentState = (state_t*) SYSOLD;
+{    
+    // update currentProc state
+    copyState(&(currentProc->p_s),(state_t*) SYSOLD);
 
-debug(0x13,currentState->a1,0,0);
+    debug(0x13,currentProc->p_s.a1,0,0);
 
     // if in kernal mode
-    if (currentState->cpsr & SYS_MODE == SYS_MODE)
-        switch(currentState->a1) // on syscall arg
+    if (currentProc->p_s.cpsr & SYS_MODE == SYS_MODE)
+        switch(currentProc->p_s.a1) // on syscall arg
         {
             case 1: // - BIRTH NEW PROC
                 sys1();
@@ -115,14 +121,7 @@ debug(0x13,currentState->a1,0,0);
                 sys8();
             default: // - Pass up or die
                 // do we have a custom handler for this?
-                if (currentProc->p_handlers[CUSTOM_SYS_NEW] != NULL)
-                {
-                    // we have custom handler for these calls
-                    // so lets go there instead.
-                    LDST(currentProc->p_handlers[CUSTOM_SYS_NEW]);
-                }
-                // otherwise, GLASS 'EM
-                sys2();
+                passUpOrDie(CUSTOM_SYS);
         }
     // if in User Mode
     // save old state in PGTold
@@ -202,7 +201,7 @@ void sys4() // wait
     int* semAdd = currentProc->p_s.a2;
 
     (*semAdd)--;
-    if (*semAdd > 0)
+    if (*semAdd < 0)
     {
         updateTime();
         insertBlocked(semAdd,currentProc);

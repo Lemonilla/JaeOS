@@ -3,6 +3,7 @@
 
 #include "../h/const.h"
 #include "../h/types.h"
+
 #include "../e/asl.e"
 #include "../e/pcb.e"
 #include "../e/initial.e"
@@ -36,7 +37,6 @@ void intHandle()
     if (lineNumber == CLOCK_LINE)
     {
         // ASSUME IT"S END OF QUANTOM
-
 
         // if there's no prog who's quantom to end, skip this shit
         if (currentProc == NULL) scheduler();

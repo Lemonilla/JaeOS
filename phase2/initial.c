@@ -111,21 +111,25 @@ void main()
     intNew->pc = (uint) intHandle;
     intNew->sp = RAM_TOP;
     intNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
+    intNew->CP15_Control = ALLOFF;
 
     state_t* tlbNew = (state_t *) TLBNEW;
     tlbNew->pc = (uint) tlbHandle;
     tlbNew->sp = RAM_TOP;
     tlbNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
+    tlbNew->CP15_Control = ALLOFF;
 
     state_t* pgmtNew = (state_t *) PGMTNEW;
     pgmtNew->pc = (uint) pgmHandle;
     pgmtNew->sp = RAM_TOP;
     pgmtNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
+    pgmtNew->CP15_Control = ALLOFF;
 
     state_t* sysNew = (state_t *) SYSNEW;
     sysNew->pc = (uint) sysHandle;
     sysNew->sp = RAM_TOP;
     sysNew->cpsr = ALLOFF | SYS_MODE | INT_DISABLED;
+    sysNew->CP15_Control = ALLOFF;
 
     // initialize first process
     pcb_t* firstProc = allocPcb();

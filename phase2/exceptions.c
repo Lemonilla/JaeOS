@@ -250,6 +250,7 @@ void sys7() // wait 100 ms
     // time update handled in sys4
     // call sys 4 on psudo-timer for requesting process
     currentProc->p_s.a2 = devSem[PSUDOTIMER_SEM_INDEX];
+    softBlockCount++;
     sys4();
 }
 

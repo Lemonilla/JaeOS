@@ -50,7 +50,8 @@ debug(3,0,0,0);
     startTime_Lo = getTODHI();
 
     // set timer
-    setTIMER(QUANTOM);
+    // setTIMER(QUANTOM);
+    setTIMER(0xFFFFFFFF);
 
     // load state in p
     LDST(&(currentProc->p_s));

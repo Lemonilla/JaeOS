@@ -21,15 +21,15 @@
 #define MAXPROC                     20
 #define QUANTOM                     5000
 #define WORDSIZE                    4
-#define PAGESIZE                    4000
-#define RAMTOP                      0x00000204
+#define PAGESIZE                    FRAME_SIZE //4096
+#define RAMTOP                      RAM_TOP //0x00000204
 
 // CPSR Masks
 #define ALLOFF                      0x00000000
 #define SYS_MODE                    0x0000001F
 #define USR_MODE                    0x00000010
-#define INT_ENABLED                 0x000000C0
-#define INT_DISABLED                0x00000000 
+#define INT_DISABLED                0x000000C0
+#define INT_ENABLED                 0x00000000 
 
 // Exception Vector
 #define INTOLD                      0x00007000

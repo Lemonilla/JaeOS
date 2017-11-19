@@ -34,10 +34,10 @@ int devStat[DEVICESPERLINE*NUMOFDEVICELINES];
 
 int getTimeRunning()
 {
-    int new_hi = getTODHI();
-    int new_lo = getTODLO();
-    int old_hi = startTime_Hi;
-    int old_lo = startTime_Lo;
+    uint new_hi = getTODHI();
+    uint new_lo = getTODLO();
+    uint old_hi = startTime_Hi;
+    uint old_lo = startTime_Lo;
 
     if (new_hi > old_hi)
     {

@@ -82,7 +82,7 @@ void glassThem(pcb_t* p)
 
 void pgmHandle()
 {
-    debug(0x11,0,0,0);
+    debug(0x11,0,0,((state_t*) PGMTOLD)->CP15_Cause);
     passUpOrDie(CUSTOM_PGM);
 }
 

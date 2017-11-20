@@ -28,8 +28,8 @@ uint startTime_Hi, startTime_Lo;
 
 // init device semaphors
 // index of device semaphore is Line# * DEVICESPERLINE + Device#
-int devSem[DEVICESPERLINE*NUMOFDEVICELINES];
-int devStat[DEVICESPERLINE*NUMOFDEVICELINES];
+int devSem[DEVICESPERLINE * NUMOFDEVICELINES];
+int devStat[DEVICESPERLINE * NUMOFDEVICELINES];
 
 
 int getTimeRunning()

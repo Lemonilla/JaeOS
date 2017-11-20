@@ -12,8 +12,15 @@
 
 state_t* old;
 
+void debugA(int a, int b, int c, int d)
+{
+    int i=42;
+    i++;
+}
+
 void intHandle()
 {
+    debug(0x17,0,0,0);
 
     // setup access to interrupting state
     // we don't update currentProc because we might be in WAIT();
@@ -29,7 +36,7 @@ void intHandle()
         --line;
         mask = mask >> 1;
 
-    }  
+    }
 
     // if nothing is interrupting, panic
     if (lineNumber == NULL) PANIC();
@@ -67,49 +74,46 @@ void intHandle()
         mask = mask >> 1;
     }
 
-    debug(0x17,0xFF,lineNumber,devNumber);
+    // get device semaphore
+    //DEVICESPERLINE
+    int index = (lineNumber * DEVICESPERLINE + devNumber - 0x30) / 2;
 
     // if no device is interrupting, panic
-    //if (devNumber == NULL) PANIC();
+    if ((devNumber+1) == NULL) {
+        PANIC();
+    }
 
     // get device register (taken from book pg 36)
-    devregister_t* deviceReg = (devreg_t*) (*((uint*)0x02D8) + (lineNumber-3)*0x80 + (devNumber * 0x10));
-    // devregister_t* deviceReg = DEVICEREGSTART + (lineNumber * LINEOFFSET) + (semIndex * DEVICEOFFSET);
-
-    // devregister_t* deviceReg = *((void*)0x02D8) + ()
-
-
-    debug(0x17,0xF0,(*deviceReg).command,(*deviceReg).data1);
-
-    // get device semaphore
-    int index = lineNumber * NUMOFDEVICELINES + devNumber;
-    debug(0x17,0xF1,0,0);
+    devreg_t* deviceReg = (index * DEVICESPERLINE) + (*(uint*) 0x02D8);
 
     // copy status code for later use
-    uint status = deviceReg->status;
-    debug(0x17,0xF2,0,0);
+    uint status = deviceReg->term.transm_status;
 
     // set command to acknowledged
-    deviceReg->command = CMD_ACK;
-    debug(0x17,0xF3,0,0);
+    deviceReg->term.recv_command = CMD_ACK;
+    deviceReg->term.transm_command = CMD_ACK;
+    //deviceReg->data0 = CMD_ACK;
 
     // increment and test to see if we need to pop
-    if (++devSem[index] <= 0)
+    devSem[index] = devSem[index] + 1;
+    if (devSem[index] <= 0)
     {
         softBlockCount--;
         pcb_t* tmp = removeBlocked(&(devSem[index]));
         tmp->p_semAdd = NULL;
-        tmp->p_s.a2 = status;
+        tmp->p_s.a1 = status;
         insertProcQ(&readyQ, tmp);
     }
-    debug(0x17,0xF4,0,0);
-
-    // if we beat the IOWAIT request
-    devStat[index] = status;
-
-    debug(0x17,0xF5,0,0);
+    else 
+    {
+        // if we beat the IOWAIT request
+        devStat[index] = status;
+    }
 
     if (currentProc == NULL) scheduler();
-    // return;
-    LDST(old);
+
+    // stop prefetching
+    ((state_t*)INTOLD)->pc = ((state_t*) INTOLD)->pc - 4;
+
+    LDST(INTOLD);
 }

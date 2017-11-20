@@ -139,18 +139,20 @@ void sysHandle()
 
 void sys1() // Babies
 {
-debug(0x13,0xFF,1,0);
     // make new proc
     pcb_t* p = allocPcb();
 
     // default we can't make a child ;_;
     currentProc->p_s.a1 = -1; // return error code
+    state_t* sentState = currentProc->p_s.a2;
 
     // if we can, fix return value and make the child
     if (p != NULL)
     {
+        copyState(&(p->p_s),sentState);
         currentProc->p_s.a1 = 0; // return OK code
         insertChild(currentProc,p); // make it a child of currentProc
+        insertProcQ(&readyQ,p);
     }
 
     // resume execution
@@ -159,7 +161,6 @@ debug(0x13,0xFF,1,0);
 
 void sys2() // GLASS 'EM
 {
-debug(0x13,0xFF,2,0);
     // kill a proc & all it's children
 
     glassThem(currentProc);
@@ -169,7 +170,6 @@ debug(0x13,0xFF,2,0);
 
 void sys3() // signal
 {
-    debug(0x13,0xFF,3,0);
     int* semAdd = currentProc->p_s.a2;
 
     (*semAdd)++;
@@ -184,7 +184,6 @@ void sys3() // signal
 
 void sys4() // wait
 {
-    debug(0x13,0xFF,4,0);
     int* semAdd = currentProc->p_s.a2;
 
     (*semAdd)--;
@@ -200,7 +199,6 @@ void sys4() // wait
 
 void sys5() // set custom handler
 {
-    debug(0x13,0xFF,5,0);
 
     /* 0: PGM_OLD */
     /* 1: TLB_OLD */
@@ -228,7 +226,6 @@ void sys5() // set custom handler
 
 int sys6() // get CPU time
 {
-    debug(0x13,0xFF,6,0);
 
     // update time
     updateTime();
@@ -242,7 +239,6 @@ int sys6() // get CPU time
 
 void sys7() // wait 100 ms
 {
-    debug(0x13,0xFF,7,0);
     
     // maybe increment softblocked?
 
@@ -256,14 +252,14 @@ void sys7() // wait 100 ms
 
 void sys8() // wait for I/O
 {
-    debug(0x13,0xFF,8,0);
 
     // index of device semaphore is Line# * 16 + Device#
     int lineNum = currentProc->p_s.a2;
     int devNum = currentProc->p_s.a3;
     bool readFromTerminal = currentProc->p_s.a4;
 
-    int index = lineNum*16 + devNum; 
+    //int index = lineNum*16 + devNum; 
+    int index = (lineNum * DEVICESPERLINE + devNum - 0x30) / 2;
     if (lineNum == TERMINAL_LINE && readFromTerminal) index+=8; 
 
     if (--devSem[index] < 0)

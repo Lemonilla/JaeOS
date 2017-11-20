@@ -149,25 +149,21 @@ unsigned int *p5MemLocation = 0;		/* To cause a p5 trap */
 
 void	p2(),p3(),p4(),p5(),p5a(),p5b(),p6(),p7(),p7a(),p5prog(),p5mm();
 void	p5sys(),p8root(),child1(),child2(),p8leaf();
-
+unsigned int status_t;
 
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
 
 	char * s = msg;
 	termreg_t * base = (termreg_t *) (TERM0ADDR);
-	unsigned int status;
 	
 	SYSCALL(PASSERN, (int)&term_mut, 0, 0);				/* P(term_mut) */
 	while (*s != EOS) {
-		debug(0xFF,1,1,0);
 		base->transm_command = PRINTCHR | (((unsigned int) *s) << BYTELEN);
-		debug(0xFF,0xFF,0xFF,0xFF);
-		status = SYSCALL(WAITIO, IL_TERMINAL, 0, 0);	
-		debug(0xFF,1,1,2);
-		if ((status & TERMSTATMASK) != RECVD)
+		status_t = SYSCALL(WAITIO, IL_TERMINAL, 0, 0);	
+		if ((status_t & TERMSTATMASK) != RECVD){
 			PANIC();
-		debug(0xFF,1,1,3);
+		}
 		s++;	
 	}
 	SYSCALL(VERHOGEN, (int)&term_mut, 0, 0);				/* V(term_mut) */
@@ -178,10 +174,10 @@ void print(char *msg) {
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {	
-	debug(0xFF,0,0,0);
+	status_t = 0;
 
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
-debug(0xFF,1,0,0);
+
 	print("p1 v(testsem)\n");
 debug(0xFF,2,0,0);
 
@@ -272,15 +268,15 @@ debug(0xFF,2,0,0);
 	print("p2 was started\n");
 
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);					/* V(startp2)   */
-
+debug_test(0x2,0,0,0);
 	SYSCALL(PASSERN, (int)&endp2, 0, 0);					/* P(endp2)     */
-
+debug_test(0x3,0,0,0);
 	/* make sure we really blocked */
 	if (p1p2synch == 0)
 		print("error: p1/p2 synchronization bad\n");
 
 	SYSCALL(CREATETHREAD, (int)&p3state, 0, 0);				/* start p3     */
-
+debug_test(4,0,0,0);
 	print("p3 is started\n");
 
 	SYSCALL(PASSERN, (int)&endp3, 0, 0);					/* P(endp3)     */
@@ -334,13 +330,19 @@ void p2() {
 	/* initialize all semaphores in the s[] array */
 	for (i=0; i<= MAXSEM; i++)
 		s[i] = 0;
-	
+
+	debug_test(0xFF,0xE2,0,0);
+
 	/* V, then P, all of the semaphores in the s[] array */
 	for (i=0; i<= MAXSEM; i++)  {
 		SYSCALL(VERHOGEN, (int)&s[i], 0, 0);			/* V(S[I]) */
 		SYSCALL(PASSERN, (int)&s[i], 0, 0);			/* P(S[I]) */
+		debug_test(0xFF,0xE3,i,0);
 		if (s[i] != 0)
+		{
+			debug_test(0xFF,0xE4,s[i],0);
 			print("error: p2 bad v/p pairs\n");
+		}
 	}
 
 

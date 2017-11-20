@@ -13,13 +13,13 @@
 
 typedef unsigned int uint;
 typedef int bool;
-
-typedef struct {
-    uint status;
-    uint command;
-    uint data0;
-    uint data1;
-} devregister_t;          
+ 
+// devreg_t {
+// uint    status || recv_status
+// uint    command || recv_command
+// uint    data0 || transm_status
+// uint    data1 || transm_command
+// }       
 
 typedef struct {
     uint lines[8];

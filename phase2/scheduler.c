@@ -22,7 +22,6 @@ debug(3,0,0,0);
         // check if processCount = 0
         if (processCount == 0) 
         {
-            debug(3,1,0,0);
             HALT();
         }
 
@@ -32,16 +31,17 @@ debug(3,0,0,0);
         {
             debug(3,2,0,0);
             currentProc = NULL;
+
+            setTIMER(0xFFFFFFFF);
             // TURN ON INTERRUPTS!
-            setSTATUS(ALLOFF | SYS_MODE);
+            setSTATUS(ALLOFF | SYS_MODE | INT_ENABLED );
             
             WAIT();
         } 
-        debug(3,3,0,0);
         // we've hit deadlock
+        debug(3,3,0,0);
         PANIC();
     }
-
     // if list is not empty
     currentProc = next;
 
@@ -50,9 +50,7 @@ debug(3,0,0,0);
     startTime_Lo = getTODHI();
 
     // set timer
-    // setTIMER(QUANTOM);
-    setTIMER(0xFFFFFFFF);
-
+    setTIMER(QUANTOM);
     // load state in p
     LDST(&(currentProc->p_s));
 }

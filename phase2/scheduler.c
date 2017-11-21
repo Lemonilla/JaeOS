@@ -32,7 +32,6 @@ debug(3,0,0,0);
             debug(3,2,0,0);
             currentProc = NULL;
 
-            setTIMER(0xFFFFFFFF);
             // TURN ON INTERRUPTS!
             setSTATUS(ALLOFF | SYS_MODE | INT_ENABLED );
             
@@ -46,8 +45,7 @@ debug(3,0,0,0);
     currentProc = next;
 
     // start timer thing
-    startTime_Hi = getTODHI();
-    startTime_Lo = getTODHI();
+    resetStopwatch();
 
     // set timer
     setTIMER(QUANTOM);

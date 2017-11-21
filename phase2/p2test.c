@@ -268,15 +268,15 @@ debug(0xFF,2,0,0);
 	print("p2 was started\n");
 
 	SYSCALL(VERHOGEN, (int)&startp2, 0, 0);					/* V(startp2)   */
-debug_test(0x2,0,0,0);
+
 	SYSCALL(PASSERN, (int)&endp2, 0, 0);					/* P(endp2)     */
-debug_test(0x3,0,0,0);
+
 	/* make sure we really blocked */
 	if (p1p2synch == 0)
 		print("error: p1/p2 synchronization bad\n");
 
 	SYSCALL(CREATETHREAD, (int)&p3state, 0, 0);				/* start p3     */
-debug_test(4,0,0,0);
+
 	print("p3 is started\n");
 
 	SYSCALL(PASSERN, (int)&endp3, 0, 0);					/* P(endp3)     */
@@ -331,16 +331,13 @@ void p2() {
 	for (i=0; i<= MAXSEM; i++)
 		s[i] = 0;
 
-	debug_test(0xFF,0xE2,0,0);
 
 	/* V, then P, all of the semaphores in the s[] array */
 	for (i=0; i<= MAXSEM; i++)  {
 		SYSCALL(VERHOGEN, (int)&s[i], 0, 0);			/* V(S[I]) */
 		SYSCALL(PASSERN, (int)&s[i], 0, 0);			/* P(S[I]) */
-		debug_test(0xFF,0xE3,i,0);
 		if (s[i] != 0)
 		{
-			debug_test(0xFF,0xE4,s[i],0);
 			print("error: p2 bad v/p pairs\n");
 		}
 	}
@@ -350,7 +347,7 @@ void p2() {
 
 	/* test of SYS6 */
 
-	getTODLO(now1);				/* time of day   */
+	now1 = getTODLO();				/* time of day   */
 	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
 
 	/* delay for several milliseconds */
@@ -358,10 +355,13 @@ void p2() {
 		;
 
 	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
-	getTODLO(now2);				/* time of day  */
+	now2 = getTODLO();				/* time of day  */
 	
 	targetTime = MINLOOPTIME / 1;
 /*	targetTime = (MINLOOPTIME / (* ((cpu_t *)TIMESCALEADDR))); */
+
+debug_test(0xCC,(now2 - now1) , (cpu_t2 - cpu_t1), 0);
+
 
 	if (((now2 - now1) >= (cpu_t2 - cpu_t1)) && ((cpu_t2 - cpu_t1) >= targetTime))
 		print("p2 is OK\n");

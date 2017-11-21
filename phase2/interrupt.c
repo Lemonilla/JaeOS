@@ -26,6 +26,9 @@ void intHandle()
     // we don't update currentProc because we might be in WAIT();
     old = (state_t*) INTOLD;
 
+    // do this first so we don't charge for interrupt time
+    if (currentProc != NULL) updateTime();
+
     // figure out highest priority device alert
     uint lineNumber = NULL;
     uint mask = 0x80000000;
@@ -51,6 +54,8 @@ void intHandle()
 
         // update state
         copyState(&(currentProc->p_s), INTOLD);
+        // stop prefetch?
+        currentProc->p_s.pc = currentProc->p_s.pc - 4;
 
         // increment currentProc cpu time
         updateTime();
@@ -114,6 +119,9 @@ void intHandle()
 
     // stop prefetching
     ((state_t*)INTOLD)->pc = ((state_t*) INTOLD)->pc - 4;
+
+    // don't charge for interrupt
+    resetStopwatch();
 
     LDST(INTOLD);
 }

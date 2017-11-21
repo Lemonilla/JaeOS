@@ -164,6 +164,8 @@ void sys2() // GLASS 'EM
     // kill a proc & all it's children
 
     glassThem(currentProc);
+
+    resetStopwatch();
     
     scheduler();
 }
@@ -172,7 +174,7 @@ void sys3() // signal
 {
     int* semAdd = currentProc->p_s.a2;
 
-    (*semAdd)++;
+    (*semAdd) = ((*semAdd) + 1);
     if (*semAdd <= 0)
     {
         pcb_t* rem = removeBlocked(semAdd);
@@ -186,7 +188,7 @@ void sys4() // wait
 {
     int* semAdd = currentProc->p_s.a2;
 
-    (*semAdd)--;
+    (*semAdd) = ((*semAdd) - 1);
     if (*semAdd < 0)
     {
         updateTime();
@@ -239,15 +241,15 @@ int sys6() // get CPU time
 
 void sys7() // wait 100 ms
 {
-    
-    // maybe increment softblocked?
-
-
-    // time update handled in sys4
-    // call sys 4 on psudo-timer for requesting process
-    currentProc->p_s.a2 = devSem[PSUDOTIMER_SEM_INDEX];
+    devSem[PSUDOTIMER_SEM_INDEX]--;
     softBlockCount++;
-    sys4();
+
+    updateTime();
+
+    insertBlocked(&(devSem[PSUDOTIMER_SEM_INDEX]),currentProc);
+
+    currentProc = NULL;
+    scheduler();
 }
 
 void sys8() // wait for I/O

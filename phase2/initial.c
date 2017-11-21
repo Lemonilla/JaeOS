@@ -50,6 +50,11 @@ int getTimeRunning()
 void updateTime()
 {
     currentProc->p_cpuTime += getTimeRunning();
+    resetStopwatch();
+}
+
+void resetStopwatch()
+{
     startTime_Hi = getTODHI();
     startTime_Lo = getTODLO();
 }
@@ -96,8 +101,7 @@ void main()
     }
 
     // init timing values
-    startTime_Hi = getTODHI();
-    startTime_Lo = getTODLO();
+    resetStopwatch();
 
     // initialize the Process Control Blocks
     initPcbs();

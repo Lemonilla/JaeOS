@@ -11,8 +11,9 @@
  *		Aborts as soon as an error is detected.
  *
  *      Modified by Michael Goldweber on May 15, 2004
- *		Modified by Michael Goldweber: Fall 2017
  */
+
+
 
 
 // START EDIT
@@ -25,6 +26,10 @@ void debug_test(int a, int b, int c, int d)
 
 
 
+#define PROGTRAP 	1
+#define TLBTRAP		0
+#define SYSTRAP		2
+
 #include "../h/const.h"
 #include "../h/types.h"
 #include "../e/initial.e"
@@ -34,24 +39,17 @@ void debug_test(int a, int b, int c, int d)
 // END EDIT
 
 
-
-
-/* 
-#include "../h/const.h"
-#include "../h/types.h"
-*/
 #include "/usr/include/uarm/libuarm.h"
 #include "/usr/include/uarm/uARMtypes.h"
 #include "/usr/include/uarm/arch.h"
 #include "/usr/include/uarm/uARMconst.h"
+#define ALLOFF	0
+#define NUMOFDEVICELINES 8
 
-#define ALLOFF				0x00000000
-#define INTSDISABLED		0x000000C0
-
-#define TLBTRAP			0
-#define PROGTRAP		1
-#define SYSTRAP			2
-
+#include "../e/scheduler.e"
+#include "../e/initial.e"
+#include "../e/interrupt.e"
+#include "../e/exceptions.e"
 
 typedef unsigned int devregtr;
 
@@ -147,38 +145,41 @@ int		p4inc=1;		/* p4 incarnation number */
 unsigned int p5Stack;	/* so we can allocate new stack for 2nd p5 */
 
 int creation = 0; 				/* return code for SYSCALL invocation */
-unsigned int *p5MemLocation = (unsigned int *)0x00000034;		/* To cause a p5 trap */
+unsigned int *p5MemLocation = 0;		/* To cause a p5 trap */
 
 void	p2(),p3(),p4(),p5(),p5a(),p5b(),p6(),p7(),p7a(),p5prog(),p5mm();
 void	p5sys(),p8root(),child1(),child2(),p8leaf();
-
+unsigned int status_t;
 
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
 
 	char * s = msg;
 	termreg_t * base = (termreg_t *) (TERM0ADDR);
-	unsigned int status;
 	
 	SYSCALL(PASSERN, (int)&term_mut, 0, 0);				/* P(term_mut) */
 	while (*s != EOS) {
 		base->transm_command = PRINTCHR | (((unsigned int) *s) << BYTELEN);
-		status = SYSCALL(WAITIO, IL_TERMINAL, 0, 0);	
-		if ((status & TERMSTATMASK) != RECVD)
+		status_t = SYSCALL(WAITIO, IL_TERMINAL, 0, 0);	
+		if ((status_t & TERMSTATMASK) != RECVD){
 			PANIC();
+		}
 		s++;	
 	}
 	SYSCALL(VERHOGEN, (int)&term_mut, 0, 0);				/* V(term_mut) */
 }
 
+
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {	
-	
+	status_t = 0;
+
 	SYSCALL(VERHOGEN, (int)&testsem, 0, 0);					/* V(testsem)   */
 
 	print("p1 v(testsem)\n");
+debug(0xFF,2,0,0);
 
 	/* set up states of the other processes */
 
@@ -329,13 +330,16 @@ void p2() {
 	/* initialize all semaphores in the s[] array */
 	for (i=0; i<= MAXSEM; i++)
 		s[i] = 0;
-	
+
+
 	/* V, then P, all of the semaphores in the s[] array */
 	for (i=0; i<= MAXSEM; i++)  {
 		SYSCALL(VERHOGEN, (int)&s[i], 0, 0);			/* V(S[I]) */
 		SYSCALL(PASSERN, (int)&s[i], 0, 0);			/* P(S[I]) */
 		if (s[i] != 0)
+		{
 			print("error: p2 bad v/p pairs\n");
+		}
 	}
 
 
@@ -353,7 +357,11 @@ void p2() {
 	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);			/* CPU time used */
 	now2 = getTODLO();				/* time of day  */
 	
-	targetTime = (MINLOOPTIME / (*((unsigned int *)BUS_REG_TIME_SCALE))); 
+	targetTime = MINLOOPTIME / 1;
+/*	targetTime = (MINLOOPTIME / (* ((cpu_t *)TIMESCALEADDR))); */
+
+debug_test(0xCC,(now2 - now1) , (cpu_t2 - cpu_t1), 0);
+
 
 	if (((now2 - now1) >= (cpu_t2 - cpu_t1)) && ((cpu_t2 - cpu_t1) >= targetTime))
 		print("p2 is OK\n");
@@ -388,13 +396,12 @@ void p3() {
 	time2 = 0;
 
 	/* loop until we are delayed at least half of clock V interval */
-	while ((time2-time1) < (CLOCKINTERVAL >> 1) )  { 
-		time1 = getTODLO();			/* time of day     */
-		print ("p3 - Timer Started\n");
-		debug_test(0xAA,0,0,0);
+/*	while (time2-time1 < (CLOCKINTERVAL >> 1) )  { */
+	while (time2 != time1) {
+		getTODLO(time1);			/* time of day     */
+		print ("Start timer\n");
 		SYSCALL(WAITCLOCK, 0, 0, 0);
-		debug_test(0xAA,1,0,0);
-		time2 = getTODLO();			/* new time of day */
+		getTODLO(time2);			/* new time of day */
 	}
 
 	print("p3 - WAITCLOCK OK\n");
@@ -403,12 +410,13 @@ void p3() {
 	   time correctly */
 	cpu_t1 = SYSCALL(GETCPUTIME, 0, 0, 0);
 
-	for (i=0; i<CLOCKLOOP; i++)
-		SYSCALL(WAITCLOCK, 0, 0, 0); 
+/*	for (i=0; i<CLOCKLOOP; i++)
+		SYSCALL(WAITCLOCK, 0, 0, 0); */
 	
 	cpu_t2 = SYSCALL(GETCPUTIME, 0, 0, 0);
 
-	targetTime = (MINCLOCKLOOP / (*((unsigned int *)BUS_REG_TIME_SCALE))); 
+	targetTime = MINCLOCKLOOP / 1;
+/*	targetTime = (MINCLOCKLOOP / (* ((cpu_t *)TIMESCALEADDR))); */
 
 	if ((cpu_t2 - cpu_t1) < targetTime)
 		print("error: p3 - CPU time incorrectly maintained\n");
@@ -506,11 +514,12 @@ void p5mm() {
 void p5sys() {
 	unsigned int p5status = sstat_o.cpsr & STATUS_SYS_MODE;
 	if (p5status == STATUS_SYS_MODE) {
-		print("High level SYS call from kernel mode process\n");
-	}
-	else {
 		print("High level SYS call from user mode process\n");
 	}
+	else {
+		print("High level SYS call from kernel mode process\n");
+	}
+	sstat_o.pc = sstat_o.pc - 8;   /*	 to avoid SYS looping */
 	LDST(&sstat_o);
 }
 
@@ -560,11 +569,11 @@ void p5b() {
 	/* do some delay to be reasonably sure p4 and its offspring are dead */
 	time1 = 0;
 	time2 = 0;
-	while (time2 - time1 < (CLOCKINTERVAL >> 1))  {
-		time1 = getTODLO();
+/*	while (time2 - time1 < (CLOCKINTERVAL >> 1))  {
+		getTODLO(time1);
 		SYSCALL(WAITCLOCK, 0, 0, 0);
-		time2 = getTODLO();
-	} 
+		getTODLO(time2);
+	} */
 
 	/* if p4 and offspring are really dead, this will increment blkp4 */
 
@@ -658,5 +667,3 @@ void p8leaf() {
 
 	SYSCALL(PASSERN, (int)&blkp8, 0, 0);
 }
-
-

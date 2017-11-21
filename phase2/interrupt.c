@@ -20,7 +20,6 @@ void debugA(int a, int b, int c, int d)
 
 void intHandle()
 {
-    debug(0x17,0,0,0);
 
     // setup access to interrupting state
     // we don't update currentProc because we might be in WAIT();
@@ -47,8 +46,36 @@ void intHandle()
     // if end of quantum
     if (lineNumber == CLOCK_LINE)
     {
-        // ASSUME IT"S END OF QUANTOM
+        
 
+        // handle wakup and return to process
+        if (getTODLO() >= Sys7WakeupTimestamp) 
+        {
+            debug(0x17,1,0,0);
+            pcb_t* tmp = removeBlocked(&(devSem[PSUDOTIMER_SEM_INDEX]));
+            while (tmp != NULL)
+            {
+                insertProcQ(&readyQ,tmp);
+                softBlockCount = softBlockCount - 1; // ????
+                tmp = removeBlocked(&(devSem[PSUDOTIMER_SEM_INDEX]));
+            }
+
+            setTIMER(QuantomPart2);
+            QuantomPart2 = 0;
+            Sys7WakeupTimestamp = getTODLO() + 100000;
+
+            // stop prefetching
+            //((state_t*)INTOLD)->pc = ((state_t*) INTOLD)->pc - 4;
+
+            // don't charge for interrupt
+            resetStopwatch();
+
+            debug(0x17,0xFF,0,0);
+            LDST(INTOLD);
+        }
+
+        // OTHERWISE IT"S END OF QUANTOM
+        debug(0x17,0,0,0);
         // if there's no prog who's quantom to end, skip this shit
         if (currentProc == NULL) scheduler();
 

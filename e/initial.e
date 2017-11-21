@@ -10,6 +10,9 @@ extern pcb_t* currentProc;
 extern uint startTime_Hi;
 extern uint startTime_Lo;
 
+extern int Sys7WakeupTimestamp;
+extern int QuantomPart2;
+
 // index of device semaphore is Line# * DEVICESPERLINE + Device#
 extern int devSem[DEVICESPERLINE*NUMOFDEVICELINES];
 extern int devStat[DEVICESPERLINE*NUMOFDEVICELINES];

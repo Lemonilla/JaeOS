@@ -33,62 +33,50 @@ HIDDEN void passUpOrDie(int offset)
     LDST(currentProc->p_handlers[offset+CUSTOM_HANDLER_NEW_OFFSET]); 
 }
 
+
 void glassThem(pcb_t* p)
 {
-    pcb_t* tmp;
-    pcb_t* removedProc;
-    while(p != NULL)
+    while (!emptyChild(p))
     {
-        // if we have a child, kill that generation
-        if (!emptyChild(p))
+        glassThem(removeChild(p));
+    }
+    if (p == currentProc)
+    {
+        currentProc = NULL;
+    } 
+    else 
+    {
+        if (p->p_semAdd != NULL) // we're blocked
         {
-            glassThem(removeChild(p));
+            outBlocked(p);
+            if (p->p_semAdd <= devSem[DEVICESPERLINE * NUMOFDEVICELINES] && p->p_semAdd >= devSem[0])
+            {
+                softBlockCount = softBlockCount - 1;
+            }
+            else
+            {
+                (*(p->p_semAdd)) = (*(p->p_semAdd)) + 1;
+            }
         }
-
-        // it's just 
-        if (p == currentProc)
-        {
-            currentProc = NULL;
-            outChild(p);
-        }
-
-        // it's in readyQ
-        if (p->p_semAdd == NULL)
+        else // on readyQ
         {
             outProcQ(&readyQ,p);
         }
-
-        // blocked on ASL
-        if (p->p_semAdd != NULL)
-        {
-            // we're softblocked
-            if (p->p_semAdd >= &devSem[0] && p->p_semAdd <= &devSem[DEVICESPERLINE*NUMOFDEVICELINES])
-            {
-                softBlockCount--;
-            }
-            else 
-            {
-                *(p->p_semAdd)++;
-            }
-            outBlocked(p);
-        }
-
-        processCount--;
-
-        // Free it for use later
-        freePcb(p);
     }
+    freePcb(p);
+    processCount = processCount - 1;
+    return;
 }
 
 void pgmHandle()
 {
-    debug(0x11,0,0,((state_t*) PGMTOLD)->CP15_Cause);
+    //debug(0x11,0,0,((state_t*) PGMTOLD)->CP15_Cause);
     passUpOrDie(CUSTOM_PGM);
 }
 
 void tlbHandle()
 {
-    debug(0x12,0,0,0);
+  //  debug(0x12,0,0,0);
     passUpOrDie(CUSTOM_TLB);
 }
 
@@ -97,7 +85,7 @@ void sysHandle()
     // update currentProc state
     copyState(&(currentProc->p_s),(state_t*) SYSOLD);
 
-    debug(0x13,currentProc->p_s.a1,0,0);
+   // debug(0x13,currentProc->p_s.a1,0,0);
 
     // if in kernal mode
     if (currentProc->p_s.cpsr & SYS_MODE == SYS_MODE)
@@ -152,6 +140,7 @@ void sys1() // Babies
         copyState(&(p->p_s),sentState);
         currentProc->p_s.a1 = 0; // return OK code
         insertChild(currentProc,p); // make it a child of currentProc
+        processCount = processCount + 1;
         insertProcQ(&readyQ,p);
     }
 

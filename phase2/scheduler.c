@@ -9,9 +9,9 @@
 #include "../e/exceptions.e"
 #include "../e/interrupt.e"
 
+
 void scheduler()
 {
-debug(3,0,0,0);
 
     // get next in line
     pcb_t* next = removeProcQ(&readyQ);
@@ -29,7 +29,7 @@ debug(3,0,0,0);
         // check softblock count = 0
         if (softBlockCount != 0) 
         {
-            debug(3,2,0,0);
+            //debug(3,2,0,0);
             currentProc = NULL;
 
             // TURN ON INTERRUPTS!
@@ -48,7 +48,16 @@ debug(3,0,0,0);
     resetStopwatch();
 
     // set timer
-    setTIMER(QUANTOM);
+    int tod = getTODLO();
+    if (tod+QUANTOM > Sys7WakeupTimestamp)
+    {
+        QuantomPart2 = QUANTOM - (Sys7WakeupTimestamp - (tod+QUANTOM));
+        setTIMER(tod+QUANTOM - Sys7WakeupTimestamp);
+    }
+    else 
+    {
+        setTIMER(QUANTOM);
+    }
     // load state in p
     LDST(&(currentProc->p_s));
 }

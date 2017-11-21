@@ -32,6 +32,9 @@ int devSem[DEVICESPERLINE * NUMOFDEVICELINES];
 int devStat[DEVICESPERLINE * NUMOFDEVICELINES];
 
 
+int Sys7WakeupTimestamp;
+int QuantomPart2;
+
 int getTimeRunning()
 {
     uint new_hi = getTODHI();
@@ -58,9 +61,6 @@ void resetStopwatch()
     startTime_Hi = getTODHI();
     startTime_Lo = getTODLO();
 }
-
-
-
 
 void copyState(state_t* copy, state_t* initial)
 {
@@ -102,6 +102,8 @@ void main()
 
     // init timing values
     resetStopwatch();
+    Sys7WakeupTimestamp = getTODLO() + 100000;
+    QuantomPart2 = 0;
 
     // initialize the Process Control Blocks
     initPcbs();

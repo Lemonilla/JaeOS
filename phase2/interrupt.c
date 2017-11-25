@@ -52,12 +52,13 @@ void intHandle()
         if (getTODLO() >= Sys7WakeupTimestamp) 
         {
             debug(0x17,1,0,0);
-            pcb_t* tmp = removeBlocked(&(devSem[PSUDOTIMER_SEM_INDEX]));
-            while (tmp != NULL)
-            {
+            pcb_t* tmp = NULL;
+            
+            while (TRUE) {
+                tmp = removeBlocked(&(devSem[PSUDOTIMER_SEM_INDEX]));
+                if (tmp == NULL) break;
                 insertProcQ(&readyQ,tmp);
                 softBlockCount = softBlockCount - 1; // ????
-                tmp = removeBlocked(&(devSem[PSUDOTIMER_SEM_INDEX]));
             }
 
             setTIMER(QuantomPart2);
@@ -65,12 +66,16 @@ void intHandle()
             Sys7WakeupTimestamp = getTODLO() + 100000;
 
             // stop prefetching
-            //((state_t*)INTOLD)->pc = ((state_t*) INTOLD)->pc - 4;
+            ((state_t*)INTOLD)->pc = ((state_t*) INTOLD)->pc - 4;
 
             // don't charge for interrupt
             resetStopwatch();
 
             debug(0x17,0xFF,0,0);
+            if(currentProc == NULL)
+            {
+               scheduler();
+            }
             LDST(INTOLD);
         }
 

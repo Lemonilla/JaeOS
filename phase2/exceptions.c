@@ -15,6 +15,8 @@ HIDDEN void passUpOrDie(int offset)
     {
         // if we haven't specified what to do here, GLASS 'EM
         glassThem(currentProc);
+
+        scheduler();
     }
     // they have a custom handler
     // pass off the problem to that
@@ -27,7 +29,8 @@ HIDDEN void passUpOrDie(int offset)
         case CUSTOM_TLB: toCopyFrom = TLBOLD; break;
         case CUSTOM_SYS: toCopyFrom = SYSOLD; break;
     }
-    currentProc->p_handlers[offset] = toCopyFrom;
+    copyState(currentProc->p_handlers[offset],toCopyFrom);
+
 
     // load new state
     LDST(currentProc->p_handlers[offset+CUSTOM_HANDLER_NEW_OFFSET]); 
@@ -76,7 +79,7 @@ void pgmHandle()
 
 void tlbHandle()
 {
-  //  debug(0x12,0,0,0);
+    //debug(0x12,0,0,0);
     passUpOrDie(CUSTOM_TLB);
 }
 
@@ -89,6 +92,7 @@ void sysHandle()
 
     // if in kernal mode
     if (currentProc->p_s.cpsr & SYS_MODE == SYS_MODE)
+    {
         switch(currentProc->p_s.a1) // on syscall arg
         {
             case 1: // - BIRTH NEW PROC
@@ -109,8 +113,11 @@ void sysHandle()
                 sys8();
             default: // - Pass up or die
                 // do we have a custom handler for this?
+                debug(0x13,0xDD,0,0);
                 passUpOrDie(CUSTOM_SYS);
         }
+    }
+    debug(0x13,currentProc->p_s.a1,currentProc->p_s.cpsr,currentProc->p_s.cpsr & SYS_MODE);
     // if in User Mode
     // save old state in PGTold
     state_t* programTrapOld = (uint) PGMTOLD;
@@ -202,7 +209,7 @@ void sys5() // set custom handler
     uint new = currentProc->p_s.a4;
 
     // if we've already done this, GLASS 'EM
-    if (currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] == NULL)
+    if (currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] != NULL)
     {
         sys2();
     }

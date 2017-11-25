@@ -387,13 +387,13 @@ void p3() {
 	time1 = 0;
 	time2 = 0;
 
+
+		debug_test(0xAA,1,0,0);
 	/* loop until we are delayed at least half of clock V interval */
 	while ((time2-time1) < (CLOCKINTERVAL >> 1) )  { 
 		time1 = getTODLO();			/* time of day     */
 		print ("p3 - Timer Started\n");
-		debug_test(0xAA,0,0,0);
 		SYSCALL(WAITCLOCK, 0, 0, 0);
-		debug_test(0xAA,1,0,0);
 		time2 = getTODLO();			/* new time of day */
 	}
 
@@ -496,6 +496,11 @@ void p5mm() {
 	print("memory management trap\n");
 	/* VM off, user mode on */
 	mstat_o.cpsr = ALLOFF | STATUS_USER_MODE;  
+
+	// I ADDED THIS
+	mstat_o.cpsr = ALLOFF | STATUS_SYS_MODE;
+
+
 	mstat_o.CP15_Control = ALLOFF;
 	mstat_o.pc = (unsigned int)p5b;  /* return to p5b */
 	mstat_o.sp = p5Stack-QPAGE;				/* Start with a fresh stack */

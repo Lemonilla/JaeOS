@@ -27,6 +27,7 @@ void intHandle()
 
     // do this first so we don't charge for interrupt time
     if (currentProc != NULL) updateTime();
+    debug(0x17,0xFF,0,0);
 
     // figure out highest priority device alert
     uint lineNumber = NULL;
@@ -39,6 +40,7 @@ void intHandle()
         mask = mask >> 1;
 
     }
+    //debug(0x17,0xFF,1,lineNumber);
 
     // if nothing is interrupting, panic
     if (lineNumber == NULL) PANIC();
@@ -46,8 +48,6 @@ void intHandle()
     // if end of quantum
     if (lineNumber == CLOCK_LINE)
     {
-        
-
         // handle wakup and return to process
         if (getTODLO() >= Sys7WakeupTimestamp) 
         {
@@ -99,6 +99,7 @@ void intHandle()
         scheduler();
 
     }
+    //debug(0x17,0xFF,2,lineNumber);
     // get device number of highest priority
     int devNumber = NULL;
     mask = 0x00000080;
@@ -110,6 +111,8 @@ void intHandle()
         --dev;
         mask = mask >> 1;
     }
+
+    //debug(0x17,0xFF,2,devNumber);
 
     // get device semaphore
     //DEVICESPERLINE

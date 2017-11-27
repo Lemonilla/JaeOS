@@ -10,6 +10,12 @@
 #include "../e/exceptions.e"
 #include "../e/scheduler.e"
 
+HIDDEN void debug(int a, int b, int c, int d)
+{
+    int i = 42;
+    i++;
+}
+
 state_t* old;
 
 void intHandle()
@@ -113,13 +119,22 @@ void intHandle()
     // get device register (taken from book pg 36)
     devreg_t* deviceReg = (index * DEVICESPERLINE) + (*(uint*) 0x02D8);
 
-    // copy status code for later use
+    // copy status code for later use 
+    // and to determine which terminal opperation we're dealing with
     uint status = deviceReg->term.transm_status;
 
     // set command to acknowledged
-    deviceReg->term.recv_command = CMD_ACK;
-    deviceReg->term.transm_command = CMD_ACK;
-    //deviceReg->data0 = CMD_ACK;
+    if (status != DEV_S_READY)
+    {
+        // then we're dealing with transmition
+        deviceReg->term.transm_command = CMD_ACK;
+    }
+    else 
+    {
+        // we're dealing with reception
+        status = deviceReg->term.recv_status;
+        deviceReg->term.recv_command = CMD_ACK;
+    }
 
     // increment and test to see if we need to pop
     devSem[index] = devSem[index] + 1;

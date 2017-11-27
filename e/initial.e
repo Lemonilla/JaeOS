@@ -21,7 +21,4 @@ extern void copyState(state_t* copy, state_t* initial);
 extern void updateTime();
 extern void resetStopwatch();
 
-
-extern void debug(int a, int b, int c, int d);
-
 #endif

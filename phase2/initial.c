@@ -12,13 +12,6 @@
 #include "p2test.c"
 
 
-void debug(int a, int b, int c, int d)
-{
-    int i = 42;
-    i++;
-}
-
-
 // initialize kernal variables
 int processCount = 0;
 int softBlockCount = 0;

@@ -37,7 +37,6 @@ void scheduler()
             WAIT();
         } 
         // we've hit deadlock
-        debug(3,3,0,0);
         PANIC();
     }
     // if list is not empty

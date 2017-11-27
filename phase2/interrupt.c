@@ -12,22 +12,15 @@
 
 state_t* old;
 
-void debugA(int a, int b, int c, int d)
-{
-    int i=42;
-    i++;
-}
-
 void intHandle()
 {
-
     // setup access to interrupting state
     // we don't update currentProc because we might be in WAIT();
     old = (state_t*) INTOLD;
 
     // do this first so we don't charge for interrupt time
     if (currentProc != NULL) updateTime();
-    debug(0x17,0xFF,0,0);
+    debug(0x17,0xFF,0,0); // NESSISARY (i don't know why)
 
     // figure out highest priority device alert
     uint lineNumber = NULL;
@@ -40,7 +33,6 @@ void intHandle()
         mask = mask >> 1;
 
     }
-    //debug(0x17,0xFF,1,lineNumber);
 
     // if nothing is interrupting, panic
     if (lineNumber == NULL) PANIC();
@@ -51,7 +43,6 @@ void intHandle()
         // handle wakup and return to process
         if (getTODLO() >= Sys7WakeupTimestamp) 
         {
-            debug(0x17,1,0,0);
             pcb_t* tmp = NULL;
             
             while (TRUE) {
@@ -71,7 +62,6 @@ void intHandle()
             // don't charge for interrupt
             resetStopwatch();
 
-            debug(0x17,0xFF,0,0);
             if(currentProc == NULL)
             {
                scheduler();
@@ -80,7 +70,7 @@ void intHandle()
         }
 
         // OTHERWISE IT"S END OF QUANTOM
-        debug(0x17,0,0,0);
+        debug(0x17,0,0,0); // NESSISARY? (idk why)
         // if there's no prog who's quantom to end, skip this shit
         if (currentProc == NULL) scheduler();
 
@@ -99,7 +89,6 @@ void intHandle()
         scheduler();
 
     }
-    //debug(0x17,0xFF,2,lineNumber);
     // get device number of highest priority
     int devNumber = NULL;
     mask = 0x00000080;
@@ -111,8 +100,6 @@ void intHandle()
         --dev;
         mask = mask >> 1;
     }
-
-    //debug(0x17,0xFF,2,devNumber);
 
     // get device semaphore
     //DEVICESPERLINE

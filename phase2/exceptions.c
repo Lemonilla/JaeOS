@@ -46,12 +46,6 @@ void glassThem(pcb_t* p)
     {
         glassThem(removeChild(p));
     }
-    // pcb_t* toDie = removeChild(p);
-    // while (toDie != NULL)
-    // {
-    //     glassThem(toDie);
-    //     toDie = removeChild(p);
-    // }
     if (p == currentProc)
     {
         currentProc = NULL;
@@ -76,22 +70,18 @@ void glassThem(pcb_t* p)
             outProcQ(&readyQ,p);
         }
     }
-    //debugA(0x1,p->p_id,0,0);
     freePcb(p);
     processCount = processCount - 1;
     return;
 }
 
-
 void pgmHandle()
 {
-    //debug(0x11,0,0,((state_t*) PGMTOLD)->CP15_Cause);
     passUpOrDie(CUSTOM_PGM);
 }
 
 void tlbHandle()
 {
-    //debug(0x12,0,0,0);
     passUpOrDie(CUSTOM_TLB);
 }
 
@@ -99,10 +89,6 @@ void sysHandle()
 {    
     // update currentProc state
     copyState(&(currentProc->p_s),(state_t*) SYSOLD);
-
-    
-
-   // debug(0x13,currentProc->p_s.a1,0,0);
 
     // if in kernal mode
     if (currentProc->p_s.cpsr & SYS_MODE == SYS_MODE)
@@ -127,12 +113,10 @@ void sysHandle()
                 sys8();
             default: // - Pass up or die
                 // do we have a custom handler for this?
-                debug(0x13,0xDD,0,0);
                 passUpOrDie(CUSTOM_SYS);
         }
     }
-    debug(0x13,currentProc->p_s.a1,currentProc->p_s.cpsr,currentProc->p_s.cpsr & SYS_MODE);
-    
+
     if (currentProc->p_s.a1 > 8) passUpOrDie(CUSTOM_SYS);
 
     // if in User Mode
@@ -147,12 +131,10 @@ void sysHandle()
     LDST(PGMTNEW);
 }
 
-pcb_t* sys1p;
-
 void sys1() // Babies
 {
     // make new proc
-    sys1p = allocPcb();
+    pcb_t* sys1p = allocPcb();
 
     // default we can't make a child ;_;
     currentProc->p_s.a1 = -1; // default return code is error code
@@ -215,7 +197,6 @@ void sys4() // wait
 
 void sys5() // set custom handler
 {
-
     /* 0: PGM_OLD */
     /* 1: TLB_OLD */
     /* 2: SYS_OLD */

@@ -49,6 +49,7 @@ typedef struct pcb_t {
                                 /* 4: TLB_NEW */
                                 /* 5: SYS_NEW */
     int            p_handlers[6];
+    uint           p_id;
 
 }  pcb_t, *pcb_PTR;
 

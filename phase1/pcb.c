@@ -78,7 +78,6 @@ void freePcb (pcb_t* p)
  ****/
 pcb_t* allocPcb ()
 {
-    int blank[22];
     // If the freelist is empty return NULL
     if (emptyProcQ(freeList)) return NULL;
 
@@ -116,7 +115,6 @@ pcb_t* allocPcb ()
     tmp->p_s.TOD_Hi = NULL;
     tmp->p_s.TOD_Low = NULL;
 
-
     // Return the node off the Free List
     return tmp;
 }
@@ -142,7 +140,10 @@ void initPcbs ()
 
     // enqueue each pcb onto the free list
     for(int i = 0; i < MAXPROC; i++)
+    {
+        pcbList[i].p_id = i;
         freePcb((pcb_t*)&pcbList[i]);
+    }
 }
 
 

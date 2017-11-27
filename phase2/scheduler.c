@@ -29,7 +29,6 @@ void scheduler()
         // check softblock count = 0
         if (softBlockCount != 0) 
         {
-            //debug(3,2,0,0);
             currentProc = NULL;
 
             // TURN ON INTERRUPTS!

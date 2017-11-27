@@ -42,15 +42,16 @@
 #define SYSNEW                      0x00007268
 
 // custom handler indexes
-#define CUSTOM_PGM                  0
-#define CUSTOM_TLB                  1
+#define CUSTOM_TLB                  0
+#define CUSTOM_PGM                  1
 #define CUSTOM_SYS                  2
 #define CUSTOM_HANDLER_NEW_OFFSET   3
-#define CUSTOM_PGM_OLD              0
-#define CUSTOM_TLB_OLD              1
+ 
+#define CUSTOM_TLB_OLD              0
+#define CUSTOM_PGM_OLD              1
 #define CUSTOM_SYS_OLD              2
-#define CUSTOM_PGM_NEW              3
-#define CUSTOM_TLB_NEW              4
+#define CUSTOM_PGM_NEW              4
+#define CUSTOM_TLB_NEW              3
 #define CUSTOM_SYS_NEW              5
 
 // Device Register addresses

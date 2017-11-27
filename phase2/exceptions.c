@@ -15,7 +15,7 @@ HIDDEN void passUpOrDie(int offset)
     {
         // if we haven't specified what to do here, GLASS 'EM
         glassThem(currentProc);
-
+        currentProc = NULL;
         scheduler();
     }
     // they have a custom handler
@@ -39,13 +39,23 @@ HIDDEN void passUpOrDie(int offset)
 
 void glassThem(pcb_t* p)
 {
-    while (!emptyChild(p))
+    if (p == NULL) return;
+
+
+    while(!emptyChild(p))
     {
         glassThem(removeChild(p));
     }
+    // pcb_t* toDie = removeChild(p);
+    // while (toDie != NULL)
+    // {
+    //     glassThem(toDie);
+    //     toDie = removeChild(p);
+    // }
     if (p == currentProc)
     {
         currentProc = NULL;
+        outChild(p);
     } 
     else 
     {
@@ -66,10 +76,12 @@ void glassThem(pcb_t* p)
             outProcQ(&readyQ,p);
         }
     }
+    //debugA(0x1,p->p_id,0,0);
     freePcb(p);
     processCount = processCount - 1;
     return;
 }
+
 
 void pgmHandle()
 {
@@ -87,6 +99,8 @@ void sysHandle()
 {    
     // update currentProc state
     copyState(&(currentProc->p_s),(state_t*) SYSOLD);
+
+    
 
    // debug(0x13,currentProc->p_s.a1,0,0);
 
@@ -118,38 +132,42 @@ void sysHandle()
         }
     }
     debug(0x13,currentProc->p_s.a1,currentProc->p_s.cpsr,currentProc->p_s.cpsr & SYS_MODE);
+    
+    if (currentProc->p_s.a1 > 8) passUpOrDie(CUSTOM_SYS);
+
     // if in User Mode
     // save old state in PGTold
-    state_t* programTrapOld = (uint) PGMTOLD;
-    state_t* sysHandlerOld = (uint) SYSOLD;
-    programTrapOld = sysHandlerOld;
+    copyState(PGMTOLD,SYSOLD);
 
     // update cause to RI (reserved instruction)
-    programTrapOld->CP15_Cause = ALLOFF | RESERVED_INSTRUCTION_CODE;
+    state_t* programTrapOld = (uint) PGMTOLD;
+    programTrapOld->CP15_Cause = RESERVED_INSTRUCTION_CODE;
 
     // goto program trap handler
-    state_t* programTrapNew = (uint) PGMTNEW;
-    LDST(programTrapNew);
+    LDST(PGMTNEW);
 }
+
+pcb_t* sys1p;
 
 void sys1() // Babies
 {
     // make new proc
-    pcb_t* p = allocPcb();
+    sys1p = allocPcb();
 
     // default we can't make a child ;_;
-    currentProc->p_s.a1 = -1; // return error code
+    currentProc->p_s.a1 = -1; // default return code is error code
     state_t* sentState = currentProc->p_s.a2;
 
     // if we can, fix return value and make the child
-    if (p != NULL)
+    if (sys1p != NULL)
     {
-        copyState(&(p->p_s),sentState);
+        copyState(&(sys1p->p_s),sentState);
         currentProc->p_s.a1 = 0; // return OK code
-        insertChild(currentProc,p); // make it a child of currentProc
+        insertChild(currentProc,sys1p); // make it a child of currentProc
         processCount = processCount + 1;
-        insertProcQ(&readyQ,p);
+        insertProcQ(&readyQ,sys1p);
     }
+
 
     // resume execution
     LDST(&(currentProc->p_s));

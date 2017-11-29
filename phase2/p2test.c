@@ -17,12 +17,6 @@
 
 // START EDIT
 
-void debug_test(int a, int b, int c, int d)
-{
-	int i = 42l;
-	i++;
-}
-
 
 
 #include "../h/const.h"
@@ -164,8 +158,9 @@ void print(char *msg) {
 	while (*s != EOS) {
 		base->transm_command = PRINTCHR | (((unsigned int) *s) << BYTELEN);
 		status = SYSCALL(WAITIO, IL_TERMINAL, 0, 0);	
-		if ((status & TERMSTATMASK) != RECVD)
+		if ((status & TERMSTATMASK) != RECVD){
 			PANIC();
+		}
 		s++;	
 	}
 	SYSCALL(VERHOGEN, (int)&term_mut, 0, 0);				/* V(term_mut) */
@@ -307,7 +302,6 @@ void test() {
 	}
 
 	print("p1 finishes OK -- TTFN\n");
-	debug_test(0xFF,0xEE,0xDD,0xCC);
 	* ((unsigned int *) BADADDR) = 0;				/* terminate p1 */
 
 	/* should not reach this point, since p1 just got a program trap */
@@ -551,8 +545,6 @@ void p5a() {
 /* second part of p5 - should be entered in user mode */
 void p5b() {
 	cpu_t		time1, time2;
-
-debug_test(9,0,0,0);
 
 	SYSCALL(9, 0, 0, 0);
 	/* the first time through, we are in user mode */

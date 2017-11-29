@@ -9,12 +9,13 @@
 #include "../e/exceptions.e"
 #include "../e/interrupt.e"
 
-
 void scheduler()
 {
 
     // get next in line
-    pcb_t* next = removeProcQ(&readyQ);
+    volatile pcb_t* next;
+    volatile int tod;
+    next = removeProcQ(&readyQ);
 
     // if list is empty
     if (next == NULL)
@@ -46,7 +47,7 @@ void scheduler()
     resetStopwatch();
 
     // set timer
-    int tod = getTODLO();
+    tod = getTODLO();
     if (tod+QUANTOM > Sys7WakeupTimestamp)
     {
         QuantomPart2 = QUANTOM - (Sys7WakeupTimestamp - (tod+QUANTOM));
@@ -56,6 +57,7 @@ void scheduler()
     {
         setTIMER(QUANTOM);
     }
+
     // load state in p
     LDST(&(currentProc->p_s));
 }

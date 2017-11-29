@@ -13,20 +13,21 @@
 
 
 // initialize kernal variables
-int processCount = 0;
-int softBlockCount = 0;
-pcb_t* readyQ;
-pcb_t* currentProc = NULL;
-uint startTime_Hi, startTime_Lo;
+volatile int processCount = 0;
+volatile int softBlockCount = 0;
+volatile pcb_t* readyQ;
+volatile pcb_t* currentProc = NULL;
+volatile uint startTime_Hi, startTime_Lo;
 
 // init device semaphors
 // index of device semaphore is Line# * DEVICESPERLINE + Device#
-int devSem[DEVICESPERLINE * NUMOFDEVICELINES];
-int devStat[DEVICESPERLINE * NUMOFDEVICELINES];
+// index of termianals is device Number (+8 if receiving)
+volatile int devSem[DEVICESPERLINE * NUMOFDEVICELINES];
+volatile int devStat[DEVICESPERLINE * NUMOFDEVICELINES];
 
-
-int Sys7WakeupTimestamp;
-int QuantomPart2;
+// Timing stuff
+volatile int Sys7WakeupTimestamp;
+volatile int QuantomPart2;
 
 int getTimeRunning()
 {

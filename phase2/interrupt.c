@@ -10,28 +10,40 @@
 #include "../e/exceptions.e"
 #include "../e/scheduler.e"
 
-HIDDEN void debug(int a, int b, int c, int d)
+HIDDEN void debug_int(int a, int b, int c, int d)
 {
     int i = 42;
     i++;
 }
 
-state_t* old;
-
+//volatile uint status;
 void intHandle()
 {
     // setup access to interrupting state
     // we don't update currentProc because we might be in WAIT();
+    volatile state_t* old;
+    volatile pcb_t* tmp;
+    volatile uint lineNumber;
+    volatile uint mask;
+    volatile int line;
+    volatile int devNumber;
+    volatile uint* bitmap;
+    volatile int dev;
+    volatile int index;
+    volatile uint status;
+    volatile devreg_t* deviceReg;
+    volatile uint* semAddress;
+
     old = (state_t*) INTOLD;
 
     // do this first so we don't charge for interrupt time
     if (currentProc != NULL) updateTime();
-    debug(0x17,0xFF,0,0); // NESSISARY (i don't know why)
+    //debug_int(0x17,0xFF,0,0); // NESSISARY (i don't know why)
 
     // figure out highest priority device alert
-    uint lineNumber = NULL;
-    uint mask = 0x80000000;
-    int line = 7;
+    lineNumber = NULL;
+    mask = 0x80000000;
+    line = 7;
     while (mask >= 0x01000000)
     {
         if (old->CP15_Cause & mask) lineNumber = line;
@@ -49,7 +61,7 @@ void intHandle()
         // handle wakup and return to process
         if (getTODLO() >= Sys7WakeupTimestamp) 
         {
-            pcb_t* tmp = NULL;
+            tmp = NULL;
             
             while (TRUE) {
                 tmp = removeBlocked(&(devSem[PSUDOTIMER_SEM_INDEX]));
@@ -76,7 +88,7 @@ void intHandle()
         }
 
         // OTHERWISE IT"S END OF QUANTOM
-        debug(0x17,0,0,0); // NESSISARY? (idk why)
+        //debug_int(0x17,0,0,0); // NESSISARY? (idk why)
         // if there's no prog who's quantom to end, skip this shit
         if (currentProc == NULL) scheduler();
 
@@ -96,10 +108,10 @@ void intHandle()
 
     }
     // get device number of highest priority
-    int devNumber = NULL;
+    devNumber = NULL;
     mask = 0x00000080;
-    int dev = 7;
-    uint* bitmap = 0x6fe0 + (lineNumber-3)*4;
+    dev = 7;
+    bitmap = 0x6fe0 + (lineNumber-3)*4;
     while (mask != 0)
     {
         if (*bitmap & mask) devNumber = dev;
@@ -109,7 +121,7 @@ void intHandle()
 
     // get device semaphore
     //DEVICESPERLINE
-    int index = (lineNumber * DEVICESPERLINE + devNumber - 0x30) / 2;
+    index = (lineNumber * DEVICESPERLINE + devNumber - 0x30) / 2;
 
     // if no device is interrupting, panic
     if ((devNumber+1) == NULL) {
@@ -117,11 +129,11 @@ void intHandle()
     }
 
     // get device register (taken from book pg 36)
-    devreg_t* deviceReg = (index * DEVICESPERLINE) + (*(uint*) 0x02D8);
+    deviceReg = (index * DEVICESPERLINE) + (*(uint*) 0x02D8);
 
     // copy status code for later use 
     // and to determine which terminal opperation we're dealing with
-    uint status = deviceReg->term.transm_status;
+    status = deviceReg->term.transm_status;
 
     // set command to acknowledged
     if (status != DEV_S_READY)
@@ -132,18 +144,24 @@ void intHandle()
     else 
     {
         // we're dealing with reception
+        index = index + 8;
         status = deviceReg->term.recv_status;
         deviceReg->term.recv_command = CMD_ACK;
     }
 
     // increment and test to see if we need to pop
     devSem[index] = devSem[index] + 1;
+    semAddress = &(devSem[index]);
     if (devSem[index] <= 0)
     {
         softBlockCount--;
-        pcb_t* tmp = removeBlocked(&(devSem[index]));
+        tmp = removeBlocked(&(devSem[index]));
         tmp->p_semAdd = NULL;
         tmp->p_s.a1 = status;
+
+        // nessisary debug call.  I don't know why.
+        debug_int(0xf0,status,&(devSem[index]),tmp->p_id);
+
         insertProcQ(&readyQ, tmp);
     }
     else 

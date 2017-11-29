@@ -9,8 +9,11 @@
 #include "../e/interrupt.e"
 #include "../e/scheduler.e"
 
+
 HIDDEN void passUpOrDie(int offset)
 {
+    volatile uint toCopyFrom;
+
     if (currentProc->p_handlers[offset] == NULL)
     {
         // if we haven't specified what to do here, GLASS 'EM
@@ -22,7 +25,6 @@ HIDDEN void passUpOrDie(int offset)
     // pass off the problem to that
 
     // copy state into old state
-    uint toCopyFrom;
     switch(offset)
     {
         case CUSTOM_PGM: toCopyFrom = PGMTOLD; break;
@@ -87,6 +89,9 @@ void tlbHandle()
 
 void sysHandle()
 {    
+
+    volatile state_t* programTrapOld;
+
     // update currentProc state
     copyState(&(currentProc->p_s),(state_t*) SYSOLD);
 
@@ -124,7 +129,7 @@ void sysHandle()
     copyState(PGMTOLD,SYSOLD);
 
     // update cause to RI (reserved instruction)
-    state_t* programTrapOld = (uint) PGMTOLD;
+    programTrapOld = (uint) PGMTOLD;
     programTrapOld->CP15_Cause = RESERVED_INSTRUCTION_CODE;
 
     // goto program trap handler
@@ -134,11 +139,13 @@ void sysHandle()
 void sys1() // Babies
 {
     // make new proc
-    pcb_t* sys1p = allocPcb();
+    volatile pcb_t* sys1p;
+    volatile state_t* sentState;
+    sys1p = allocPcb();
 
     // default we can't make a child ;_;
     currentProc->p_s.a1 = -1; // default return code is error code
-    state_t* sentState = currentProc->p_s.a2;
+    sentState = currentProc->p_s.a2;
 
     // if we can, fix return value and make the child
     if (sys1p != NULL)
@@ -149,7 +156,6 @@ void sys1() // Babies
         processCount = processCount + 1;
         insertProcQ(&readyQ,sys1p);
     }
-
 
     // resume execution
     LDST(&(currentProc->p_s));
@@ -168,12 +174,14 @@ void sys2() // GLASS 'EM
 
 void sys3() // signal
 {
-    int* semAdd = currentProc->p_s.a2;
+    volatile int* semAdd;
+    volatile pcb_t* rem;
+    semAdd = currentProc->p_s.a2;
 
     (*semAdd) = ((*semAdd) + 1);
     if (*semAdd <= 0)
     {
-        pcb_t* rem = removeBlocked(semAdd);
+        rem = removeBlocked(semAdd);
         rem->p_semAdd = NULL;
         insertProcQ(&readyQ, rem);
     }
@@ -182,7 +190,8 @@ void sys3() // signal
 
 void sys4() // wait
 {
-    int* semAdd = currentProc->p_s.a2;
+    volatile int* semAdd;
+    semAdd = currentProc->p_s.a2;
 
     (*semAdd) = ((*semAdd) - 1);
     if (*semAdd < 0)
@@ -203,9 +212,12 @@ void sys5() // set custom handler
     /* 3: PGM_NEW */
     /* 4: TLB_NEW */
     /* 5: SYS_NEW */
-    int handlerId = currentProc->p_s.a2;
-    uint old = currentProc->p_s.a3;
-    uint new = currentProc->p_s.a4;
+    volatile int handlerId;
+    volatile uint old;
+    volatile uint new;
+    handlerId = currentProc->p_s.a2;
+    old = currentProc->p_s.a3;
+    new = currentProc->p_s.a4;
 
     // if we've already done this, GLASS 'EM
     if (currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] != NULL)
@@ -251,23 +263,30 @@ void sys8() // wait for I/O
 {
 
     // index of device semaphore is Line# * 16 + Device#
-    int lineNum = currentProc->p_s.a2;
-    int devNum = currentProc->p_s.a3;
-    bool readFromTerminal = currentProc->p_s.a4;
+    volatile int lineNum;
+    volatile int devNum;
+    volatile bool readFromTerminal;
+    volatile int index;
 
-    //int index = lineNum*16 + devNum; 
-    int index = (lineNum * DEVICESPERLINE + devNum - 0x30) / 2;
-    if (lineNum == TERMINAL_LINE && readFromTerminal) index+=8; 
+    lineNum = currentProc->p_s.a2;
+    devNum = currentProc->p_s.a3;
+    readFromTerminal = currentProc->p_s.a4;
+    index = (lineNum * DEVICESPERLINE + devNum - 0x30) / 2;
+    if (lineNum == TERMINAL_LINE && readFromTerminal) 
+        index = index + 8; 
 
     if (--devSem[index] < 0)
     {
         softBlockCount++;
+        currentProc->p_semAdd = &devSem[index];
+        updateTime();
         insertBlocked(&(devSem[index]),currentProc);
         currentProc = NULL;
         scheduler();
     }
     // we got the interrupt first
     currentProc->p_s.a1 = devStat[index];
+
     devStat[index] = NULL;
     LDST(&(currentProc->p_s));
 }

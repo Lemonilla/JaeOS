@@ -1,4 +1,4 @@
-/******************************TYPES.H*******************************
+/***************************** TYPES.H ******************************
  * Written by Neal Troscinski, Timothy Wright, and MikeyG
  *
  * This header files contains definitions of types used 
@@ -12,14 +12,7 @@
 #include "../h/const.h"
 
 typedef unsigned int uint;
-typedef int bool;
- 
-// devreg_t {
-// uint    status || recv_status
-// uint    command || recv_command
-// uint    data0 || transm_status
-// uint    data1 || transm_command
-// }       
+typedef int bool; 
 
 typedef struct {
     uint lines[8];
@@ -49,7 +42,7 @@ typedef struct pcb_t {
                                 /* 4: TLB_NEW */
                                 /* 5: SYS_NEW */
     int            p_handlers[6];
-    uint           p_id;
+    uint           p_id;        /* unique id tag         */
 
 }  pcb_t, *pcb_PTR;
 

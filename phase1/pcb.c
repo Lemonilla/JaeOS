@@ -1,4 +1,4 @@
-/*******************************PCB.C********************************
+/****************************** PCB.C *******************************
  * Written by Neal Troscinski and Timothy Wright
  *
  * This application manages a circular doubly linked queue of 
@@ -6,6 +6,7 @@
  * pointer as to allow for the insert and remove operations to be 
  * a constant time operation. It is doubly linked so that we may 
  * insert and remove from the middle of the queue.
+ *
  *******************************************************************/
 
 #include "../h/types.h"

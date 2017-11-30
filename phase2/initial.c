@@ -1,5 +1,12 @@
-// initial.c
-// Neal Troscinski & Timmy Wright
+/****************************** INITIAL.C ****************************
+ * Written by Neal Troscinski and Timothy Wright
+ *
+ * This file contains the initialization for the exception and
+ * interrupt handlers, as well as the initialization of all other 
+ * phase 2 global variables as well as some helper functions.  It
+ * then creates the starting process and starts it running.
+ *
+ ********************************************************************/
 
 #include "../h/const.h"
 #include "../h/types.h"
@@ -11,25 +18,41 @@
 #include "../e/exceptions.e"
 #include "p2test.c"
 
-
-// initialize kernal variables
-volatile int processCount = 0;
+/*********************** Global Definitions *************************/
+// flow control variables
+volatile int processCount = 0;                      
 volatile int softBlockCount = 0;
 volatile pcb_t* readyQ;
 volatile pcb_t* currentProc = NULL;
-volatile uint startTime_Hi, startTime_Lo;
 
 // init device semaphors
 // index of device semaphore is Line# * DEVICESPERLINE + Device#
-// index of termianals is device Number (+8 if receiving)
-volatile int devSem[DEVICESPERLINE * NUMOFDEVICELINES];
-volatile int devStat[DEVICESPERLINE * NUMOFDEVICELINES];
+// terminals utilize the full 16 semaphores.
+// The first 8 are for writing, and the 2nd 8 are for reading.
+// The two arrays are in parallel
+volatile int devSem[DEVICESPERLINE * NUMOFDEVICELINES];  // semaphores
+volatile int devStat[DEVICESPERLINE * NUMOFDEVICELINES]; // status
 
-// Timing stuff
+// Timing variables
 volatile int Sys7WakeupTimestamp;
 volatile int QuantomPart2;
+volatile uint startTime_Hi;
+volatile uint startTime_Lo;
 
-int getTimeRunning()
+
+/*********************** Private Fucntions **************************/
+
+/**** getTimeRunning (private)
+ * Returns the time that a process
+ * has spent running.
+ *
+ * Parameters:
+ *
+ * End State:
+ *  - Returns the time a process
+ *    has spent running.
+ ****/
+HIDDEN int getTimeRunning()
 {
     uint new_hi = getTODHI();
     uint new_lo = getTODLO();
@@ -44,18 +67,60 @@ int getTimeRunning()
     return new_lo - old_lo;
 }
 
+
+
+/*********************** Public Fucntions ***************************/
+
+/**** updateTime
+ * Updates the current process'
+ * cpu time.
+ *
+ * Parameters:
+ *
+ * End State:
+ *  - The p_cpuTime field of the 
+ *    current process' pcb is updated
+ *    to reflect the current runtime.
+ *  - The start time is reset to reflect
+ *    the updating of the time.
+ ****/
 void updateTime()
 {
     currentProc->p_cpuTime += getTimeRunning();
     resetStopwatch();
 }
 
+
+/**** resetStopwatch
+ * Reset the current process'
+ * start time.
+ *
+ * Parameters:
+ *
+ * End State:
+ *  - The start time is reset.
+ ****/
 void resetStopwatch()
 {
     startTime_Hi = getTODHI();
     startTime_Lo = getTODLO();
 }
 
+
+/**** copyState
+ * Performs a deep copy on two 
+ * state_t structures.
+ *
+ * Parameters:
+ * - copy       The pointer to the state
+ *              to copy into.
+ * - initial    The pointer to the state
+ *              to copy.
+ *
+ * End State:
+ *  - copy is now a deep copy of
+ *    initial.
+ ****/
 void copyState(state_t* copy, state_t* initial)
 {
     copy->a1 = initial->a1;
@@ -82,7 +147,23 @@ void copyState(state_t* copy, state_t* initial)
     copy->TOD_Low = initial->TOD_Low; 
 }
 
-
+/**** main
+ * Sets up the JaeOS Operating System's
+ * phase 1 and 2 components and initializes
+ * the first process.
+ * This function is in charge of initializing:
+ * - Phase 2 Global Variables
+ * - Process Control Blocks
+ * - Active Semaphore List
+ * - Exception Vector states
+ * - The initial program
+ *
+ * Parameters:
+ *
+ * End State:
+ *  - Calls the scheduler to load
+ *    the first job.
+ ****/
 void main()
 {
     // init semaphores

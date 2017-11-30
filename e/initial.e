@@ -1,3 +1,11 @@
+/***************************** INITIAL.E *****************************
+ * Written by Neal Troscinski and Timothy Wright
+ *
+ * The externals declaration file that contains the global variables
+ * and helper functions for phase 2.
+ *
+ ********************************************************************/
+
 #ifndef INITIAL
 #define INITIAL
 

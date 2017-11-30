@@ -1,7 +1,8 @@
-/******************************CONST.H*******************************
+/***************************** CONST.H ******************************
  * Written by Neal Troscinski, and Timothy Wright
  *
  * This header file contains utility constants & macro definitions.
+ *
  *******************************************************************/
 
 #ifndef CONSTS
@@ -20,6 +21,7 @@
 // Global Defines
 #define MAXPROC                     20
 #define QUANTOM                     5000
+#define INTERVAL_TIMER_LENGTH       100000
 #define WORDSIZE                    4
 #define PAGESIZE                    FRAME_SIZE //4096
 #define RAMTOP                      RAM_TOP //0x00000204
@@ -46,7 +48,6 @@
 #define CUSTOM_PGM                  1
 #define CUSTOM_SYS                  2
 #define CUSTOM_HANDLER_NEW_OFFSET   3
- 
 #define CUSTOM_TLB_OLD              0
 #define CUSTOM_PGM_OLD              1
 #define CUSTOM_SYS_OLD              2
@@ -57,6 +58,12 @@
 // Device Register addresses
 #define DEV_FLAG_PTR                0x00006fe0
 #define DEV_REG_TABLE               0x000002d8
+#define DEV_BITMAP_ADDR             0x00006fe0
+#define DEV_REG_BASEADDR            0x000002D8
+#define DEV_MAX_DEV_FLAG_BIT        0x00000080
+#define DEV_MAX_LINE_FLAG_BIT       0x80000000
+#define DEV_MIN_LINE_FLAG_BIT       0x01000000
+#define DEV_SEM_INDEX_OFFSET        0x00000030
 
 // Device lines for interrupts
 #define NUMOFDEVICELINES            8

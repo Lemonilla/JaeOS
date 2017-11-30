@@ -1,4 +1,4 @@
-/*********************************ASL.C******************************
+/******************************* ASL.C *******************************
  * Written by Neal Troscinski and Timothy Wright
  *
  * This application manages a singularly linked and sorted list 
@@ -6,6 +6,7 @@
  * and has two dummy nodes. The first dummy node is at the head 
  * of the list and has a Semaphore Address of 0. The second dummy 
  * node is at the tail and has a Semaphore Address of MAXINT.
+ *
  ********************************************************************/
 
 #include "../h/types.h"

@@ -1,17 +1,33 @@
 /***************************** INTERRUPT.C ***************************
  * Written by Neal Troscinski and Timothy Wright
  *
- * This file contains the scheduler, which determines which job on
- * the ready queue should be the next job to run.  It implements a
- * first come first served algorithm which loads the jobs in the 
- * order in which they are added to the queue.
- * If no job is ready, a series of checks are executed to determine
- * the action.
- * If no jobs are left in the system, the HALT ROM function is called.
- * If there are jobs left, but they are all waiting on I/O,
- * the system enters a wait state by calling the WAIT ROM function.
- * If there are jobs left, but none are waiting on I/O, then deadlock
- * has occured, and the system panics with the PANIC ROM function.
+ * This file contains the interrupt handler which handles all 
+ * interrupts from devices, including the timer.  An interrupt is 
+ * raised when a device changes it's status in it's device register
+ * which causes a flag to be set in the high order bits of CP15_Cause.
+ *
+ * Interrupts are handled in 3 different ways depending on the device
+ * that raises the interrupt as well as the time the interrupt was
+ * raised at.  An interrupt on the clock device line can either signal
+ * the end of the quantom, or be triggered by the interval timer that
+ * triggers every 100 ms.  To determine which it is, the current time
+ * is compared to the timestamp of the next interval timer trigger.
+ * If the interrupting device is not on the clock device line, it is
+ * handled differently.
+ *
+ * When the interrupt is triggered by the interval timer, all jobs
+ * waiting on the clock semaphore are put back on the ready queue
+ * and control is returned to the current job.
+ *
+ * When the interrupt is triggered by the end of a quantom, the 
+ * current job's state is updated, and put back on the ready queue.
+ *
+ * When the interrupt is triggered by any other device, the first
+ * job waiting on that device is signaled and the status found in
+ * the device register is placed in that process' a1 register.  If
+ * no jobs are waiting on that device, the status is stored in the 
+ * global devStat array for the next time a process would request
+ * to wait on that device.
  *
  ********************************************************************/
 
@@ -23,6 +39,7 @@
 #include "../e/initial.e"
 #include "../e/exceptions.e"
 #include "../e/scheduler.e"
+
 
 /************************ Private Fucntions ************************/
 
@@ -47,7 +64,7 @@ HIDDEN void debug_int(int a, int b, int c, int d)
 }
 
 
-/*********************** Public Fucntions ************************/
+/************************ Public Fucntions **************************/
 
 /**** intHandle
  * This function runs whenever
@@ -80,19 +97,21 @@ HIDDEN void debug_int(int a, int b, int c, int d)
  *  - If it is the interval timer
  *    then all jobs waiting on it
  *    are put back onto the ready
- *    queue and the current process
- *    continues.
+ *    queue and the current 
+ *    process continues.
  *  - If it is a device that needs
- *    to be acknowledged, the status
- *    will be returned into the first
- *    process on that device's semaphore.
- *    If no device is waiting, then it
- *    is stored off in the status array
- *    for when the next process requests
- *    that device.  If there is a job
- *    currently running, that is reloaded
- *    and updated.  If no job is running
- *    shceduler is called.
+ *    to be acknowledged, the 
+ *    status will be returned into 
+ *    the first process on that 
+ *    device's semaphore. If no 
+ *    device is waiting, then it
+ *    is stored off in the status 
+ *    array for when the next 
+ *    process requests that device.  
+ *    If there is a job currently 
+ *    running, that is reloaded
+ *    and updated.  If no job is 
+ *    running shceduler is called.
  ****/
 void intHandle()
 {
@@ -198,7 +217,8 @@ void intHandle()
     }
 
     // get device semaphore
-    index = (lineNumber * DEVICESPERLINE + devNumber - DEV_SEM_INDEX_OFFSET) / 2;
+    index = (lineNumber * DEVICESPERLINE + devNumber 
+                - DEV_SEM_INDEX_OFFSET) / 2;
 
     // if no device is interrupting, panic
     if ((devNumber+1) == NULL) {
@@ -206,7 +226,8 @@ void intHandle()
     }
 
     // get device register
-    deviceReg = (index * DEVICESPERLINE) + (*(uint*) DEV_REG_BASEADDR);
+    deviceReg = (index * DEVICESPERLINE) 
+                    + (*(uint*) DEV_REG_BASEADDR);
 
     // copy status code for later use 
     // and to determine which terminal opperation we're dealing with

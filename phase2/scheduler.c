@@ -85,7 +85,8 @@ void scheduler()
     tod = getTODLO();
     if (tod+QUANTOM > Sys7WakeupTimestamp)
     {
-        QuantomPart2 = QUANTOM - (Sys7WakeupTimestamp - (tod+QUANTOM));
+        QuantomPart2 = QUANTOM - (Sys7WakeupTimestamp 
+                        - (tod + QUANTOM));
         setTIMER(tod+QUANTOM - Sys7WakeupTimestamp);
     }
     else 

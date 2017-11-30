@@ -112,8 +112,10 @@ HIDDEN void sys1() // Babies
     if (sys1p != NULL)
     {
         copyState(&(sys1p->p_s),sentState);
-        currentProc->p_s.a1 = 0; // return OK code
-        insertChild(currentProc,sys1p); // make it a child of currentProc
+        // return OK code
+        currentProc->p_s.a1 = 0; 
+        // make it a child of currentProc
+        insertChild(currentProc,sys1p); 
         processCount = processCount + 1;
         insertProcQ(&readyQ,sys1p);
     }
@@ -231,21 +233,23 @@ HIDDEN void sys4() // wait
 HIDDEN void sys5() // set custom handler
 {
     volatile int handlerId;
+    volatile int handlerIdNew;
     volatile uint old;
     volatile uint new;
     handlerId = currentProc->p_s.a2;
+    handlerIdNew = handlerId + CUSTOM_HANDLER_NEW_OFFSET;
     old = currentProc->p_s.a3;
     new = currentProc->p_s.a4;
 
     // if we've already done this, GLASS 'EM
-    if (currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] != NULL)
+    if (currentProc->p_handlers[handlerIdNew] != NULL)
     {
         sys2();
     }
 
     // set old/new in address array
     currentProc->p_handlers[handlerId] = old;
-    currentProc->p_handlers[handlerId+CUSTOM_HANDLER_NEW_OFFSET] = new;
+    currentProc->p_handlers[handlerIdNew] = new;
 
     // reload state and continue execution
     LDST(&(currentProc->p_s));
@@ -362,7 +366,7 @@ HIDDEN void sys8() // wait for I/O
 }
 
 
-/*********************** Public Fucntions ************************/
+/*********************** Public Fucntions ***************************/
 
 /**** glassThem (private)
  * Kills a process and all of it's
@@ -397,7 +401,8 @@ void glassThem(pcb_t* p)
         if (p->p_semAdd != NULL) // we're blocked
         {
             outBlocked(p);
-            if (p->p_semAdd <= devSem[DEVICESPERLINE * NUMOFDEVICELINES] 
+            if (p->p_semAdd <= 
+                    devSem[DEVICESPERLINE * NUMOFDEVICELINES]
                 && p->p_semAdd >= devSem[0])
             {
                 softBlockCount = softBlockCount - 1;
